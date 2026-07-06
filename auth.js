@@ -10,6 +10,32 @@ function checkSessionUser() {
     }
 }
 
+// RENDER NAVIGATION HEADER & STATUS
+function renderHeader() {
+    if (state.currentUser) {
+        const isAdmin = state.currentUser.role === 'Admin';
+        el.navMenu.innerHTML = `
+            <div class="user-badge">
+                <span class="avatar-dot"></span>
+                Chào <strong>${state.currentUser.username}</strong> (${isAdmin ? 'Admin' : 'Thành viên'})
+            </div>
+            ${isAdmin ? '<button class="btn btn-outline" onclick="scrollToAdmin()">🛠️ Admin</button>' : ''}
+            <button class="btn btn-danger" onclick="handleLogout()">Đăng xuất</button>
+        `;
+        if (isAdmin) {
+            el.adminPanelContainer.style.display = 'block';
+        } else {
+            el.adminPanelContainer.style.display = 'none';
+        }
+    } else {
+        el.navMenu.innerHTML = `
+            <button class="btn btn-outline" onclick="showAuthModal(false)">Đăng Nhập</button>
+            <button class="btn btn-primary" onclick="showAuthModal(true)">Đăng Ký</button>
+        `;
+        el.adminPanelContainer.style.display = 'none';
+    }
+}
+
 // AUTH MODAL TRIGGERS
 function showAuthModal(isRegister = false) {
     state.isRegisterMode = isRegister;
