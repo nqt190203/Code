@@ -1,0 +1,13 @@
+{
+  "name": "cosmic-english-ai",
+  "version": "1.0.0",
+  "description": "Cosmic English AI - Cổng Học Tiếng Anh & Làm Chủ Prompts",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/test_logic.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

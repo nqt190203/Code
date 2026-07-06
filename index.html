@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic English AI - Cổng Học Tiếng Anh & Làm Chủ Prompts</title>
+    <meta name="description" content="Nền tảng chia sẻ phương pháp học tiếng Anh ứng dụng Trí tuệ nhân tạo (AI) với hiệu ứng Galaxy Cosmic hiện đại chạy offline.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Galaxy Space Background -->
+    <div class="galaxy-bg"></div>
+    <div class="stars"></div>
+
+    <!-- Header Section -->
+    <header>
+        <div class="logo" id="headerLogo" onclick="backToHome()">
+            🌌 Cosmic English AI <span>local</span>
+        </div>
+        <nav id="navMenu">
+            <!-- Dynamic header buttons handled by JS -->
+        </nav>
+    </header>
+
+    <!-- Hero / Main List View -->
+    <div id="homeView">
+        <section class="hero">
+            <div class="counter-badge" id="freeReadCounter">
+                🎯 Lượt xem miễn phí: 0/3 bài
+            </div>
+            <h1>Bứt Phá Tiếng Anh<br>Bằng Sức Mạnh AI</h1>
+            <p>
+                Cổng lưu trữ tài liệu, phương pháp học ngoại ngữ đột phá và các bộ Prompt mẫu cho ChatGPT/Claude giúp bạn tối ưu hóa 10x tốc độ tự học.
+            </p>
+            <div style="display: flex; justify-content: center; gap: 1rem;">
+                <button class="btn btn-primary" onclick="scrollToGrid()">
+                    Khám phá bài học &rarr;
+                </button>
+            </div>
+        </section>
+
+        <!-- Categories filtering -->
+        <div class="categories-container" id="categoryTabs">
+            <button class="category-tab active" data-cat="all">Tất cả</button>
+            <button class="category-tab" data-cat="AI Prompts">AI Prompts</button>
+            <button class="category-tab" data-cat="Grammar">Ngữ pháp</button>
+            <button class="category-tab" data-cat="Vocabulary">Từ vựng</button>
+            <button class="category-tab" data-cat="Methods">Phương pháp</button>
+            <button class="category-tab" data-cat="AI Tools Review">Đánh giá công cụ</button>
+        </div>
+
+        <!-- Article List Grid -->
+        <main class="main-container">
+            <div class="grid" id="articlesGrid">
+                <!-- Articles dynamically generated -->
+            </div>
+
+            <!-- Admin Section Container -->
+            <div id="adminPanelContainer" class="admin-dashboard">
+                <h2>🛠️ Admin Panel (Quản trị Bài Viết)</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.2rem;">
+                    <div class="form-group">
+                        <label class="form-label">Tiêu đề bài viết</label>
+                        <input type="text" id="adminTitle" class="form-input" placeholder="Nhập tiêu đề...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Chuyên mục</label>
+                        <select id="adminCategory" class="form-input">
+                            <option value="AI Prompts">AI Prompts</option>
+                            <option value="Grammar">Ngữ pháp</option>
+                            <option value="Vocabulary">Từ vựng</option>
+                            <option value="Methods">Phương pháp</option>
+                            <option value="AI Tools Review">Đánh giá công cụ</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tóm tắt ngắn</label>
+                    <input type="text" id="adminSummary" class="form-input" placeholder="Mô tả ngắn gọn nội dung bài viết...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nội dung chi tiết (Hỗ trợ viết mã Markdown: #, ##, **, -, ```)</label>
+                    <textarea id="adminContent" class="form-input" rows="6" placeholder="Viết nội dung bài viết tại đây..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">AI Prompt đi kèm (Nếu có)</label>
+                    <textarea id="adminPrompt" class="form-input" rows="4" placeholder="Nhập prompt ví dụ: Act as an English editor..."></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-primary" id="btnSavePost">Đăng bài viết</button>
+                    <button class="btn btn-outline" id="btnCancelAdmin" onclick="clearAdminForm()">Nhập lại</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Article Detail Section -->
+    <div id="detailView" class="main-container" style="display: none;">
+        <button class="back-btn" onclick="backToHome()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Quay lại danh sách
+        </button>
+        <article class="detail-view" id="articleDetailCard">
+            <!-- Paywall container wraps target contents -->
+            <div id="articlePaywallWrapper" class="paywall-container">
+                
+                <div id="articleDetailsHeader">
+                    <div id="detailCategory" class="card-category" style="display: inline-block; margin-bottom: 1rem;">AI PROMPTS</div>
+                    <h1 class="detail-title" id="detailTitle">Tiêu đề bài viết</h1>
+                    <div class="detail-meta" id="detailMeta">
+                        <span class="card-date" id="detailDate">Đăng ngày: 29/06/2026</span>
+                    </div>
+                </div>
+
+                <!-- Main article text that will be blurred when locked -->
+                <div id="articleMainContent" class="detail-content">
+                    <p>Nội dung chi tiết...</p>
+                </div>
+
+                <!-- AI Prompt card that will also be hidden/blurred -->
+                <div id="articlePromptCard" class="prompt-card">
+                    <div class="prompt-header">
+                        <span class="prompt-badge">🌌 HỆ THỐNG PROMPT AI</span>
+                        <button class="btn btn-outline" style="padding: 0.3rem 0.8rem; font-size: 0.8rem; border-radius: 8px;" id="btnCopyPrompt">
+                            Copy Prompt
+                        </button>
+                    </div>
+                    <div class="prompt-code" id="detailPrompt">
+                        Prompt Code...
+                    </div>
+                </div>
+
+                <!-- Paywall Overlay -->
+                <div id="paywallOverlay" class="paywall-overlay" style="display: none;">
+                    <div class="paywall-box">
+                        <h4>
+                            <svg width="24" height="24" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                            Portal Đã Bị Khóa!
+                        </h4>
+                        <p>Bạn đã sử dụng hết 3 lượt xem miễn phí dành cho khách vãng lai. Vui lòng đăng nhập hoặc đăng ký tài khoản (miễn phí) để mở khóa cổng tri thức.</p>
+                        <div style="display: flex; justify-content: center; gap: 1rem;">
+                            <button class="btn btn-primary" onclick="showAuthModal(false)">Đăng Nhập</button>
+                            <button class="btn btn-outline" onclick="showAuthModal(true)">Đăng Ký</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </article>
+    </div>
+
+    <!-- Login / Registration Modal -->
+    <div class="modal" id="authModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeAuthModal()">&times;</button>
+            <h3 class="modal-title" id="authModalTitle">Mở Khóa Cosmic Portal</h3>
+            
+            <form id="authForm" onsubmit="handleAuthSubmit(event)">
+                <div class="form-group">
+                    <label class="form-label" for="authUsername">Tên đăng nhập</label>
+                    <input type="text" id="authUsername" class="form-input" required placeholder="Ví dụ: englishlearner">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="authPassword">Mật khẩu</label>
+                    <input type="password" id="authPassword" class="form-input" required placeholder="Nhập mật khẩu...">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" id="btnAuthSubmit">
+                    Đồng ý kích hoạt
+                </button>
+            </form>
+
+            <div class="modal-toggle-text" id="authToggleText">
+                Chưa có tài khoản? <a href="#" onclick="toggleAuthMode(true)">Đăng ký miễn phí</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toastMessage">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f2fe" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span id="toastText">Ghi vào Clipboard thành công!</span>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Cosmic English AI. Thiết lập chạy cục bộ (Offline Native System).</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="data.js"></script>
+    <script src="markdown.js"></script>
+    <script src="auth.js"></script>
+    <script src="posts.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
