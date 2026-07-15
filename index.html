@@ -59,43 +59,7 @@
             <div class="grid" id="articlesGrid">
                 <!-- Articles dynamically generated -->
             </div>
-
-            <!-- Admin Section Container -->
-            <div id="adminPanelContainer" class="admin-dashboard">
-                <h2>🛠️ Admin Panel (Quản trị Bài Viết)</h2>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.2rem;">
-                    <div class="form-group">
-                        <label class="form-label">Tiêu đề bài viết</label>
-                        <input type="text" id="adminTitle" class="form-input" placeholder="Nhập tiêu đề...">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Chuyên mục</label>
-                        <select id="adminCategory" class="form-input">
-                            <option value="AI Prompts">AI Prompts</option>
-                            <option value="Grammar">Ngữ pháp</option>
-                            <option value="Vocabulary">Từ vựng</option>
-                            <option value="Methods">Phương pháp</option>
-                            <option value="AI Tools Review">Đánh giá công cụ</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Tóm tắt ngắn</label>
-                    <input type="text" id="adminSummary" class="form-input" placeholder="Mô tả ngắn gọn nội dung bài viết...">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Nội dung chi tiết (Hỗ trợ viết mã Markdown: #, ##, **, -, ```)</label>
-                    <textarea id="adminContent" class="form-input" rows="6" placeholder="Viết nội dung bài viết tại đây..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">AI Prompt đi kèm (Nếu có)</label>
-                    <textarea id="adminPrompt" class="form-input" rows="4" placeholder="Nhập prompt ví dụ: Act as an English editor..."></textarea>
-                </div>
-                <div style="display: flex; gap: 1rem;">
-                    <button class="btn btn-primary" id="btnSavePost">Đăng bài viết</button>
-                    <button class="btn btn-outline" id="btnCancelAdmin" onclick="clearAdminForm()">Nhập lại</button>
-                </div>
-            </div>
+            
         </main>
     </div>
 
@@ -152,6 +116,86 @@
 
             </div>
         </article>
+    </div>
+
+    <!-- Admin Dashboard Section -->
+    <div id="adminDashboardView" class="admin-dashboard-layout" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">
+                🌌 Cosmic Admin <span>Portal</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <!-- Dashboard Item -->
+                <div class="nav-item active" data-view="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Tổng quan</span>
+                </div>
+                
+                <!-- Quản lý Bài học (Collapsible Menu) -->
+                <div class="nav-menu">
+                    <div class="nav-item has-submenu" onclick="toggleSubmenu(this)">
+                        <span class="nav-icon">📚</span>
+                        <span class="nav-text">Quản lý Bài học</span>
+                        <span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu-list">
+                        <div class="submenu-item" data-view="posts-list">Danh sách bài viết</div>
+                        <div class="submenu-item" data-view="posts-new">Đăng bài mới</div>
+                    </div>
+                </div>
+
+                <!-- Quản lý Học viên (Collapsible Menu) -->
+                <div class="nav-menu">
+                    <div class="nav-item has-submenu" onclick="toggleSubmenu(this)">
+                        <span class="nav-icon">👥</span>
+                        <span class="nav-text">Quản lý Học viên</span>
+                        <span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu-list">
+                        <div class="submenu-item" data-view="users-list">Danh sách học viên</div>
+                    </div>
+                </div>
+
+                <!-- Cấu hình Hệ thống (Collapsible Menu) -->
+                <div class="nav-menu">
+                    <div class="nav-item has-submenu" onclick="toggleSubmenu(this)">
+                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-text">Cấu hình Hệ thống</span>
+                        <span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu-list">
+                        <div class="submenu-item" data-view="settings-paywall">Giới hạn Paywall</div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn btn-outline" style="width: 100%; border-radius: 12px; font-size: 0.85rem;" onclick="exitAdminDashboard()">
+                    🚪 Quay lại học tập
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="admin-main-panel">
+            <!-- Header section of content -->
+            <header class="admin-panel-header">
+                <div class="panel-title-area">
+                    <h2 id="adminPanelTitle">Tổng Quan Hệ Thống</h2>
+                    <p id="adminPanelSubtitle" class="text-muted">Số liệu thống kê và hoạt động gần đây.</p>
+                </div>
+                <div class="panel-action-area" id="adminPanelHeaderActions">
+                    <!-- Dynamic action buttons (like Add New) -->
+                </div>
+            </header>
+
+            <!-- Inner view container -->
+            <div id="adminPanelContent" class="admin-panel-body">
+                <!-- Dynamic views will be injected here: KPI cards, tables, forms -->
+            </div>
+        </main>
     </div>
 
     <!-- Login / Registration Modal -->

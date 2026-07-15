@@ -8,7 +8,12 @@ let state = {
     currentUser: null,       // { username, role }
     readHistory: [],         // Array of post IDs read by Guest
     selectedCategory: 'all',
-    isRegisterMode: false
+    isRegisterMode: false,
+    paywallLimit: 3,
+    adminActiveView: 'dashboard',
+    adminSearchQuery: '',
+    adminCurrentPage: 1,
+    adminPageSize: 5
 };
 
 // DOM ELEMENTS (Shared globally)
@@ -40,7 +45,8 @@ function initDOMRefs() {
     el.btnAuthSubmit = document.getElementById('btnAuthSubmit');
     el.authToggleText = document.getElementById('authToggleText');
     
-    el.adminPanelContainer = document.getElementById('adminPanelContainer');
+    el.adminDashboardView = document.getElementById('adminDashboardView');
+    el.adminPanelContent = document.getElementById('adminPanelContent');
     el.toast = document.getElementById('toastMessage');
     el.toastText = document.getElementById('toastText');
 }
@@ -65,8 +71,15 @@ if (typeof window !== 'undefined') {
             }
         });
 
-        // Set up Admin Publish click event
-        document.getElementById('btnSavePost').addEventListener('click', handleCreatePost);
+        // Set up Admin sidebar items click
+        document.querySelectorAll('.nav-item[data-view], .submenu-item[data-view]').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const view = e.currentTarget.getAttribute('data-view');
+                if (view) {
+                    switchAdminView(view);
+                }
+            });
+        });
 
         // Prompt Copy Button click event
         document.getElementById('btnCopyPrompt').addEventListener('click', () => {
@@ -100,9 +113,29 @@ function scrollToGrid() {
     document.getElementById('categoryTabs').scrollIntoView({ behavior: 'smooth' });
 }
 
-// SCROLL TO ADMIN PANEL
+// REDIRECT TO ADMIN DASHBOARD PORTAL
 function scrollToAdmin() {
-    el.adminPanelContainer.scrollIntoView({ behavior: 'smooth' });
+    el.homeView.style.display = 'none';
+    el.detailView.style.display = 'none';
+    if (el.adminDashboardView) {
+        el.adminDashboardView.style.display = 'flex';
+        switchAdminView('dashboard');
+    }
+}
+
+// EXIT ADMIN PORTAL AND RETURN TO HOME
+function exitAdminDashboard() {
+    if (el.adminDashboardView) el.adminDashboardView.style.display = 'none';
+    el.homeView.style.display = 'block';
+    renderArticles();
+}
+
+// SIDEBAR SUBMENU COLLAPSE TOGGLER
+function toggleSubmenu(menuHeader) {
+    const parentMenu = menuHeader.closest('.nav-menu');
+    if (parentMenu) {
+        parentMenu.classList.toggle('open');
+    }
 }
 
 // UTILITIES: TOAST NOTIFICATIONS

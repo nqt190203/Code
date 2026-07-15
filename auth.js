@@ -19,20 +19,14 @@ function renderHeader() {
                 <span class="avatar-dot"></span>
                 Chào <strong>${state.currentUser.username}</strong> (${isAdmin ? 'Admin' : 'Thành viên'})
             </div>
-            ${isAdmin ? '<button class="btn btn-outline" onclick="scrollToAdmin()">🛠️ Admin</button>' : ''}
+            ${isAdmin ? '<button class="btn btn-outline" onclick="scrollToAdmin()">🛠️ Admin Dashboard</button>' : ''}
             <button class="btn btn-danger" onclick="handleLogout()">Đăng xuất</button>
         `;
-        if (isAdmin) {
-            el.adminPanelContainer.style.display = 'block';
-        } else {
-            el.adminPanelContainer.style.display = 'none';
-        }
     } else {
         el.navMenu.innerHTML = `
             <button class="btn btn-outline" onclick="showAuthModal(false)">Đăng Nhập</button>
             <button class="btn btn-primary" onclick="showAuthModal(true)">Đăng Ký</button>
         `;
-        el.adminPanelContainer.style.display = 'none';
     }
 }
 
@@ -110,6 +104,12 @@ function handleAuthSubmit(event) {
     renderHeader();
     updateCounterBadge();
     
+    // Auto redirect Admin straight to Admin Dashboard View
+    if (state.currentUser && state.currentUser.role === 'Admin') {
+        scrollToAdmin();
+        return;
+    }
+
     // Unlock detailed article contents if viewing a blurred page
     if (el.detailView.style.display === 'block') {
         el.articleMainContent.classList.remove('paywall-blur');
@@ -128,6 +128,11 @@ function handleLogout() {
     state.readHistory = [];
     localStorage.setItem('cosmic_read_history', JSON.stringify(state.readHistory));
     
+    // Deactivate admin layout if active
+    if (el.adminDashboardView) {
+        el.adminDashboardView.style.display = 'none';
+    }
+
     showToast("Đã đăng xuất tài khoản.");
     renderHeader();
     updateCounterBadge();
