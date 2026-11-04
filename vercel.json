@@ -1,6 +1,6 @@
 {
+  "outputDirectory": "anniversary-web",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/anniversary-web/$1" }
+    { "source": "/api/(.*)", "destination": "/api/$1" }
   ]
 }
