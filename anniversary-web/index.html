@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kỷ Niệm 1 Năm Yêu Nhau - Vũ Trụ Tình Yêu Của Chúng Ta 💕</title>
+  <meta name="description" content="Trang web kỷ niệm 1 năm yêu nhau với hộp quà 3D và vũ trụ tình yêu tương tác lung linh">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- ITviec Recommended Web Typography: Sans-serif (Inter, Roboto), Serif (Playfair Display, Merriweather), Cursive (Dancing Script) -->
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Inter:wght@300;400;500;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- Three.js & OrbitControls via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Canvas Confetti for magical moments -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <!-- WebGL Canvas Container for 3D Gift Box & Galaxy -->
+  <div id="canvas-container"></div>
+
+  <!-- Cursor Sparkle Trail -->
+  <div id="cursor-trail" aria-hidden="true"></div>
+
+  <!-- Ambient Sound / BGM Controller -->
+  <div class="audio-control-bar">
+    <button id="btn-toggle-sound" class="control-btn" title="Bật/Tắt bài hát tình yêu (tlinh - tình yêu có nghĩa là gì?)">
+      <span class="icon" id="sound-icon">🎵</span>
+      <span class="btn-text">Bật Nhạc</span>
+    </button>
+    <label class="custom-music-label" title="Chọn bài hát MP3 yêu thích khác của bạn">
+      <span class="icon">📂</span>
+      <span class="btn-text">Đổi bài khác</span>
+      <input type="file" id="custom-music-input" accept="audio/*" style="display: none;">
+    </label>
+    <audio id="main-bgm-audio" src="assets/love_song.mp3" loop preload="auto"></audio>
+  </div>
+
+  <!-- TOP HUD (Days Together Counter) -->
+  <header id="main-header" class="hidden-initially">
+    <div class="couple-badge">
+      <span class="heart-pulse">💖</span>
+      <span id="couple-names-display">Hải & Lan</span>
+      <span class="heart-pulse">💖</span>
+    </div>
+    <div class="anniversary-counter" id="anniversary-counter">
+      <div class="counter-item">
+        <span class="counter-value" id="count-days">365</span>
+        <span class="counter-label">Ngày</span>
+      </div>
+      <div class="counter-divider">:</div>
+      <div class="counter-item">
+        <span class="counter-value" id="count-hours">00</span>
+        <span class="counter-label">Giờ</span>
+      </div>
+      <div class="counter-divider">:</div>
+      <div class="counter-item">
+        <span class="counter-value" id="count-mins">00</span>
+        <span class="counter-label">Phút</span>
+      </div>
+      <div class="counter-divider">:</div>
+      <div class="counter-item">
+        <span class="counter-value" id="count-secs">00</span>
+        <span class="counter-label">Giây</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="btn-toggle-theme" class="pill-btn theme-btn" title="Chuyển đổi giao diện Hoa Hồng Xanh Lửa Băng / Hồng Trắng">
+        🌹 Hoa Hồng Xanh
+      </button>
+      <button id="btn-meteor-shower" class="pill-btn meteor-btn" title="Kích hoạt mưa sao băng lời chúc & icon cute">
+        🌠 Mưa Sao Băng
+      </button>
+      <button id="btn-edit-memories" class="pill-btn" title="Tùy chỉnh thông tin & ảnh kỷ niệm">
+        ✏️ Tùy chỉnh
+      </button>
+      <button id="btn-reset-box" class="pill-btn outline" title="Quay lại hộp quà ban đầu">
+        🎁 Hộp Quà
+      </button>
+    </div>
+  </header>
+
+  <!-- METEOR SHOWER WISHES & CUTE ICONS LAYER -->
+  <div id="meteor-shower-layer" class="meteor-shower-layer" aria-hidden="true"></div>
+
+  <!-- GIFT BOX INTRO OVERLAY -->
+  <div id="gift-intro-overlay">
+    <div class="intro-content">
+      <div class="anniversary-tag">✨ Kỷ Niệm 1 Năm Yêu Nhau ✨</div>
+      <h1 class="intro-title">Món Quà Dành Tặng Em</h1>
+      <p class="intro-subtitle">
+        Hãy chạm và xoay hộp quà để cảm nhận, sau đó nhấp vào hộp quà để mở ra cả một vũ trụ ký ức của hai chúng ta...
+      </p>
+      <div class="gift-prompt-box">
+        <button id="btn-open-gift" class="btn-glow-pulse">
+          <span class="gift-icon">🎁</span>
+          <span>Bấm Mở Quà Ngay</span>
+          <span class="sparkle-spark">✨</span>
+        </button>
+        <p class="hint-drag">💡 Kéo chuột/ngón tay để xoay hộp quà 360°</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLANET HOVER TOOLTIP -->
+  <div id="planet-tooltip" class="planet-tooltip">
+    <div class="tooltip-badge">Mốc Kỷ Niệm</div>
+    <div class="tooltip-title" id="tooltip-title">Hành Tinh Ánh Mắt</div>
+    <div class="tooltip-date" id="tooltip-date">21/10/2025</div>
+    <div class="tooltip-action">Nhấp để xem chi tiết 🚀</div>
+  </div>
+
+  <!-- INTERACTIVE 3D PLANET FLOATING BADGES (Always Visible in Universe) -->
+  <div id="planet-badges-container" class="planet-badges-container" aria-hidden="false"></div>
+
+  <!-- BOTTOM TIMELINE NAVIGATION (Active in Universe Mode) -->
+  <nav id="bottom-timeline" class="bottom-timeline hidden-initially">
+    <div class="timeline-container">
+      <div class="timeline-track-glow"></div>
+      <div class="timeline-nodes" id="timeline-nodes-list">
+        <!-- Generated dynamically via JS -->
+      </div>
+    </div>
+  </nav>
+
+  <!-- ATMOSPHERIC DIVE BACKGROUND CANVAS (Hướng 2) -->
+  <canvas id="planet-atmosphere-canvas" class="planet-atmosphere-canvas" aria-hidden="true"></canvas>
+
+  <!-- PLANET DETAIL MODAL WITH WAX-SEALED LOVE ENVELOPE (Hướng 2 + 3) -->
+  <div id="planet-modal" class="modal-overlay">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    
+    <div class="modal-card planet-envelope-card" id="planet-envelope-card">
+      <button class="modal-close-btn" id="btn-close-modal" aria-label="Đóng">&times;</button>
+      
+      <!-- WAX SEAL ENVELOPE COVER (Before Unsealing) -->
+      <div class="wax-seal-overlay" id="wax-seal-overlay">
+        <div class="envelope-back-graphic">
+          <div class="envelope-flap" id="envelope-flap"></div>
+          <div class="envelope-pocket"></div>
+        </div>
+        <div class="wax-seal-content">
+          <div class="envelope-tag" id="envelope-planet-tag">🪐 HÀNH TINH KỶ NIỆM</div>
+          <h2 class="envelope-title" id="envelope-milestone-title">Mở Khóa Ký Ức</h2>
+          <p class="envelope-subtitle">Bức thư tình và kỷ vật này được niêm phong riêng cho em...</p>
+          
+          <div class="wax-seal-wrapper">
+            <button class="wax-seal-stamp" id="btn-wax-seal" title="Bấm vào con dấu sáp để mở niêm phong ký ức!">
+              <span class="seal-ring"></span>
+              <span class="seal-heart">❤️</span>
+              <span class="seal-glow-ring"></span>
+            </button>
+            <p class="wax-seal-hint">✨ Chạm vào con dấu sáp để mở khóa ✨</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- UNSEALED CONTENT (Letter, Polaroid & Secret Message) -->
+      <div class="unsealed-content" id="unsealed-content">
+        <div class="modal-header">
+          <div class="modal-header-badges">
+            <div class="modal-planet-badge" id="modal-planet-badge">🪐 Hành Tinh Số 1</div>
+            <div class="atmosphere-badge" id="modal-atmosphere-badge">✨ Quán Cà Phê Ấm Áp</div>
+          </div>
+          <h2 class="modal-title" id="modal-milestone-title">Chuyện Tình Bắt Đầu Từ Cuốn Sách</h2>
+          <div class="modal-date-badge" id="modal-milestone-date">📅 Ngày Đầu Gặp Gỡ</div>
+        </div>
+
+        <div class="modal-body">
+          <!-- Photo with Polaroid Effect -->
+          <div class="polaroid-wrapper">
+            <div class="polaroid-card">
+              <div class="polaroid-pin">❤️</div>
+              <div class="polaroid-image-container">
+                <img id="modal-image" src="assets/milestone_1.jpg" alt="Kỷ niệm">
+              </div>
+              <div class="polaroid-caption" id="modal-caption">Một tin nhắn hỏi mua sách, một định mệnh trăm năm...</div>
+            </div>
+            <div class="polaroid-action-bar">
+              <label class="btn-change-photo" title="Thay thế ảnh này bằng ảnh thật của hai bạn">
+                📷 Tải ảnh của hai bạn
+                <input type="file" id="modal-photo-upload" accept="image/*" style="display: none;">
+              </label>
+            </div>
+          </div>
+
+          <!-- Story, Letter & Secret Scratch Section -->
+          <div class="modal-story-section">
+            <div class="story-box vintage-letter-paper">
+              <div class="letter-stamp">💌 Thư Tay Gửi Em</div>
+              <h3 class="story-heading">Bức Thư Thời Gian</h3>
+              <p class="story-text" id="modal-story-text">
+                Nội dung bức thư kỷ niệm...
+              </p>
+            </div>
+
+            <div class="quote-box">
+              <div class="quote-mark">“</div>
+              <p class="quote-text" id="modal-quote-text">
+                Lời thì thầm ngọt ngào...
+              </p>
+            </div>
+
+            <!-- INTERACTIVE SECRET SCRATCH CARD -->
+            <div class="secret-scratch-card" id="secret-scratch-card">
+              <div class="scratch-header">
+                <span class="scratch-icon">🔒</span>
+                <span class="scratch-title">Lời Nhắn Bí Mật Của Anh Dành Riêng Cho Em</span>
+                <button class="btn-reveal-all" id="btn-reveal-scratch" title="Mở khóa nhanh lời nhắn">Mở xem ngay</button>
+              </div>
+              <div class="scratch-canvas-container">
+                <div class="scratch-underlay-text" id="scratch-secret-text">
+                  Lời nhắn bí mật ẩn giấu ở đây...
+                </div>
+                <canvas id="scratch-canvas" class="scratch-canvas"></canvas>
+              </div>
+              <p class="scratch-hint">💡 Dùng chuột hoặc ngón tay cào nhẹ lớp bụi sao óng ánh để đọc nhé!</p>
+            </div>
+
+            <div class="memory-stats">
+              <div class="stat-pill">
+                <span class="stat-icon">✨</span>
+                <span id="modal-stat-feeling">Cảm xúc: Hồi hộp & Ngại ngùng</span>
+              </div>
+              <div class="stat-pill">
+                <span class="stat-icon">📍</span>
+                <span id="modal-stat-location">Địa điểm: Buổi hẹn lấy sách</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="btn-prev-milestone" class="nav-milestone-btn">
+            <span>&larr;</span> Mốc trước
+          </button>
+          <button id="btn-back-galaxy" class="nav-milestone-btn primary">
+            <span>🪐</span> Trở Lại Dải Ngân Hà
+          </button>
+          <button id="btn-reseal-envelope" class="nav-milestone-btn outline" title="Đóng gói lại vào phong thư">
+            <span>💌</span> Niêm Phong Lại
+          </button>
+          <button id="btn-next-milestone" class="nav-milestone-btn">
+            Mốc tiếp theo <span>&rarr;</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOMIZER / EDIT MODAL -->
+  <div id="edit-modal" class="modal-overlay">
+    <div class="modal-backdrop" id="edit-modal-backdrop"></div>
+    <div class="modal-card edit-card">
+      <button class="modal-close-btn" id="btn-close-edit-modal">&times;</button>
+      <div class="modal-header">
+        <div class="modal-planet-badge">✏️ Bảng Tùy Chỉnh Kỷ Niệm</div>
+        <h2 class="modal-title">Cá Nhân Hóa Vũ Trụ Của Hai Bạn</h2>
+        <p class="edit-intro">Bạn có thể sửa tên người yêu, chọn ngày bắt đầu yêu để đồng hồ tự đếm, và chỉnh sửa nội dung/ảnh cho từng mốc hành tinh.</p>
+      </div>
+
+      <div class="edit-form-container">
+        <!-- Couple & Date Config -->
+        <div class="form-section">
+          <h3 class="section-title">Thông Tin Cặp Đôi</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-partner1">Tên của bạn:</label>
+              <input type="text" id="edit-partner1" placeholder="Ví dụ: Hải">
+            </div>
+            <div class="form-group">
+              <label for="edit-partner2">Tên người yêu:</label>
+              <input type="text" id="edit-partner2" placeholder="Ví dụ: Lan">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="edit-start-date">Ngày bắt đầu yêu nhau (Tính đồng hồ kỷ niệm):</label>
+            <input type="date" id="edit-start-date">
+          </div>
+        </div>
+
+        <!-- Milestones list editor -->
+        <div class="form-section">
+          <h3 class="section-title">Danh Sách Các Mốc Hành Tinh (6 Mốc Kỷ Niệm)</h3>
+          <div id="milestones-edit-list" class="milestones-edit-list">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Cloud Sync & Multi-device Status -->
+        <div class="form-section sync-section">
+          <h3 class="section-title">☁️ Đồng Bộ Neon Cloud 24/7 (Đa Thiết Bị)</h3>
+          <div class="sync-status-card" id="sync-status-card">
+            <div class="sync-badge" id="sync-badge-icon">🔄</div>
+            <div class="sync-details">
+              <strong id="sync-status-title">Đang kết nối Neon Cloud...</strong>
+              <p id="sync-status-desc">Ảnh tải lên và các thay đổi sẽ tự động đồng bộ sang mọi máy tính và điện thoại của hai bạn 24/7.</p>
+            </div>
+            <button type="button" id="btn-force-sync" class="pill-btn sync-btn" title="Làm mới đồng bộ">🔄 Đồng bộ ngay</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-reset-default" class="nav-milestone-btn outline">Khôi phục mặc định</button>
+        <button id="btn-save-customizer" class="nav-milestone-btn primary">💾 Lưu Thay Đổi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
+  <script src="scene3d.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

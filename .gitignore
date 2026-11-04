@@ -22,6 +22,8 @@ Thumbs.db
 *.sw?
 
 # AI Agent Workspace (rules, workflows, and inputs)
+.gemini/
+GEMINI.md
 rules/
 Workflow/
 inputs/
