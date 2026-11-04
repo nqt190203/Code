@@ -1,0 +1,11 @@
+anniversary-web/
+local_server.js
+legacy_cosmic_english/
+rules/
+Workflow/
+tests/
+Dockerfile
+docker-compose.yml
+data.json
+README.md
+GEMINI.md
