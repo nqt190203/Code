@@ -106,6 +106,20 @@
         secretMessage: 'Chúc mừng kỷ niệm 1 năm của chúng mình! Anh yêu công chúa của anh nhất trên đời, mãi mãi không đổi thay! 💍🌹✨',
       },
     ],
+    bucketList: [
+      { id: 1, text: 'Cùng nhau đón hoàng hôn ấm áp ở Đà Lạt 🌅', done: true },
+      { id: 2, text: 'Cùng nhau đi xem một buổi concert thần tượng 🎶', done: false },
+      { id: 3, text: 'Tự tay làm một chiếc bánh kem sinh nhật tặng nhau 🎂', done: false },
+      { id: 4, text: 'Chụp một bộ ảnh thật lãng mạn dưới mưa 📸', done: false },
+      { id: 5, text: 'Cùng nhau đi du lịch một vùng đất chưa từng đến ✈️', done: false },
+      { id: 6, text: 'Cùng nhau xây dựng một tổ ấm ngập tràn tiếng cười 🏡💕', done: false }
+    ],
+    timeCapsule: {
+      unlockDate: '2026-12-31T23:59',
+      title: 'Bức Thư Gửi Em Vào Thời Khắc Giao Thừa',
+      message: 'Nếu em đang đọc được bức thư này, nghĩa là chúng ta đã cùng nhau đi qua thêm một chặng đường tuyệt đẹp nữa. Cảm ơn em vì đã luôn ở bên cạnh anh, dịu dàng và ấm áp như ngày đầu tiên. Dù thời gian trôi qua bao lâu, tình yêu anh dành cho em vẫn vẹn nguyên như phút ban đầu! Yêu em vô cùng! ❤️',
+      author: 'Anh'
+    }
   };
 
   // State Management with LocalStorage & Auto-Migration
@@ -245,11 +259,17 @@
         const localUpdated = appData.lastUpdated || 0;
         const serverUpdated = serverData.lastUpdated || 0;
         if (serverUpdated > localUpdated || isManual) {
+          if (!serverData.bucketList) serverData.bucketList = JSON.parse(JSON.stringify(DEFAULT_CONFIG.bucketList));
+          if (!serverData.timeCapsule) serverData.timeCapsule = JSON.parse(JSON.stringify(DEFAULT_CONFIG.timeCapsule));
           appData = serverData;
           persistData();
           renderCoupleHeader();
           renderBottomTimeline();
           updateAnniversaryCounter();
+          const bucketModal = document.getElementById('bucketlist-modal');
+          if (bucketModal && bucketModal.classList.contains('open')) {
+            renderBucketList();
+          }
           // If planet modal is open, refresh image
           if (planetModal && planetModal.classList.contains('open') && appData.milestones[currentMilestoneIndex]) {
             const m = appData.milestones[currentMilestoneIndex];
@@ -269,7 +289,14 @@
     try {
       const savedStr = localStorage.getItem('love_anniversary_data_v2');
       if (savedStr) {
-        return JSON.parse(savedStr);
+        const parsed = JSON.parse(savedStr);
+        if (!parsed.bucketList || parsed.bucketList.length === 0) {
+          parsed.bucketList = JSON.parse(JSON.stringify(DEFAULT_CONFIG.bucketList));
+        }
+        if (!parsed.timeCapsule) {
+          parsed.timeCapsule = JSON.parse(JSON.stringify(DEFAULT_CONFIG.timeCapsule));
+        }
+        return parsed;
       }
       // Check legacy v1 key
       const legacy = localStorage.getItem('love_anniversary_data');
@@ -1296,6 +1323,14 @@
     document.getElementById('edit-partner2').value = appData.partner2;
     document.getElementById('edit-start-date').value = appData.startDate;
 
+    const capsule = appData.timeCapsule || DEFAULT_CONFIG.timeCapsule;
+    const capTitleInput = document.getElementById('edit-capsule-title');
+    const capDateInput = document.getElementById('edit-capsule-date');
+    const capMsgInput = document.getElementById('edit-capsule-message');
+    if (capTitleInput) capTitleInput.value = capsule.title || '';
+    if (capDateInput) capDateInput.value = capsule.unlockDate || '2026-12-31T23:59';
+    if (capMsgInput) capMsgInput.value = capsule.message || '';
+
     editingMilestones = JSON.parse(JSON.stringify(appData.milestones));
     renderCustomizerMilestonesList();
 
@@ -1336,6 +1371,18 @@
     appData.partner2 = document.getElementById('edit-partner2').value.trim() || 'Em';
     appData.startDate = document.getElementById('edit-start-date').value || '2025-10-21';
     appData.milestones = editingMilestones;
+
+    const capTitle = document.getElementById('edit-capsule-title');
+    const capDate = document.getElementById('edit-capsule-date');
+    const capMsg = document.getElementById('edit-capsule-message');
+    if (capTitle && capDate && capMsg) {
+      appData.timeCapsule = {
+        title: capTitle.value.trim() || 'Bức Thư Gửi Tương Lai',
+        unlockDate: capDate.value || '2026-12-31T23:59',
+        message: capMsg.value.trim() || 'Yêu em vô cùng! ❤️',
+        author: appData.partner1 || 'Anh'
+      };
+    }
 
     appData.lastUpdated = Date.now();
     persistData();
@@ -1397,6 +1444,450 @@
       setTimeout(() => dot.remove(), 750);
     }
   });
+
+  /* =========================================================================
+     4 NEW ROMANTIC FEATURES MANAGERS
+     ========================================================================= */
+
+  // --- Feature 1: Time Capsule (Hộp Thư Thời Gian Hẹn Giờ) ---
+  let capsuleTimerInterval = null;
+
+  function openTimeCapsuleModal() {
+    const capsule = appData.timeCapsule || DEFAULT_CONFIG.timeCapsule;
+    const lockedView = document.getElementById('capsule-locked-view');
+    const unlockedView = document.getElementById('capsule-unlocked-view');
+    const lockedTitle = document.getElementById('capsule-locked-title');
+    const targetDateEl = document.getElementById('capsule-unlock-date-display');
+
+    if (lockedTitle) lockedTitle.textContent = capsule.title || 'Bức Thư Gửi Tương Lai';
+
+    const targetTime = new Date(capsule.unlockDate).getTime();
+    try {
+      const formattedDate = new Date(capsule.unlockDate).toLocaleString('vi-VN', {
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+      });
+      if (targetDateEl) targetDateEl.textContent = formattedDate;
+    } catch (e) {
+      if (targetDateEl) targetDateEl.textContent = capsule.unlockDate;
+    }
+
+    function updateCapsuleTimer() {
+      const now = Date.now();
+      const diff = targetTime - now;
+
+      if (diff <= 0) {
+        // UNLOCKED
+        if (lockedView) lockedView.classList.add('hidden');
+        if (unlockedView) {
+          unlockedView.classList.remove('hidden');
+          document.getElementById('capsule-unlocked-title').textContent = capsule.title || 'Bức Thư Thời Gian Đã Mở Khóa';
+          document.getElementById('capsule-unlocked-content').textContent = capsule.message;
+          document.getElementById('capsule-unlocked-sign').textContent = `Mãi yêu ${appData.partner2}, ${capsule.author || appData.partner1} ❤️`;
+        }
+        if (capsuleTimerInterval) {
+          clearInterval(capsuleTimerInterval);
+          capsuleTimerInterval = null;
+        }
+      } else {
+        // STILL LOCKED
+        if (lockedView) lockedView.classList.remove('hidden');
+        if (unlockedView) unlockedView.classList.add('hidden');
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+        const dEl = document.getElementById('capsule-days');
+        const hEl = document.getElementById('capsule-hours');
+        const mEl = document.getElementById('capsule-mins');
+        const sEl = document.getElementById('capsule-secs');
+
+        if (dEl) dEl.textContent = String(days).padStart(2, '0');
+        if (hEl) hEl.textContent = String(hours).padStart(2, '0');
+        if (mEl) mEl.textContent = String(mins).padStart(2, '0');
+        if (sEl) sEl.textContent = String(secs).padStart(2, '0');
+      }
+    }
+
+    updateCapsuleTimer();
+    if (capsuleTimerInterval) clearInterval(capsuleTimerInterval);
+    capsuleTimerInterval = setInterval(updateCapsuleTimer, 1000);
+
+    const modal = document.getElementById('timecapsule-modal');
+    if (modal) modal.classList.add('open');
+  }
+
+  function closeTimeCapsuleModal() {
+    const modal = document.getElementById('timecapsule-modal');
+    if (modal) modal.classList.remove('open');
+    if (capsuleTimerInterval) {
+      clearInterval(capsuleTimerInterval);
+      capsuleTimerInterval = null;
+    }
+  }
+
+  // --- Feature 2: Couple Bucket List (Danh Sách Ước Nguyện Đôi Mình) ---
+  function openBucketListModal() {
+    renderBucketList();
+    const modal = document.getElementById('bucketlist-modal');
+    if (modal) modal.classList.add('open');
+  }
+
+  function closeBucketListModal() {
+    const modal = document.getElementById('bucketlist-modal');
+    if (modal) modal.classList.remove('open');
+  }
+
+  function renderBucketList() {
+    const list = appData.bucketList || [];
+    const container = document.getElementById('bucketlist-items-container');
+    const progressText = document.getElementById('bucketlist-progress-text');
+    const progressFill = document.getElementById('bucketlist-progress-fill');
+
+    if (!container) return;
+    container.innerHTML = '';
+
+    const total = list.length;
+    const completed = list.filter(w => w.done).length;
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    if (progressText) progressText.textContent = `Đã hoàn thành: ${completed} / ${total} điều ước (${percent}%)`;
+    if (progressFill) progressFill.style.width = `${percent}%`;
+
+    list.forEach((item, index) => {
+      const itemEl = document.createElement('div');
+      itemEl.className = `bucket-item ${item.done ? 'done' : ''}`;
+      itemEl.innerHTML = `
+        <div class="bucket-item-left">
+          <div class="bucket-checkbox">${item.done ? '✓' : ''}</div>
+          <span class="bucket-text">${item.text}</span>
+        </div>
+        <button type="button" class="btn-del-wish" title="Xóa điều ước này">✕</button>
+      `;
+
+      // Toggle check
+      const leftPart = itemEl.querySelector('.bucket-item-left');
+      leftPart.addEventListener('click', () => {
+        item.done = !item.done;
+        if (item.done && typeof confetti === 'function') {
+          confetti({ particleCount: 35, spread: 60, origin: { y: 0.6 } });
+        }
+        appData.lastUpdated = Date.now();
+        persistData();
+        renderBucketList();
+
+        fetch('/api/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(appData)
+        }).catch(() => {});
+      });
+
+      // Delete wish
+      const btnDel = itemEl.querySelector('.btn-del-wish');
+      btnDel.addEventListener('click', (e) => {
+        e.stopPropagation();
+        appData.bucketList.splice(index, 1);
+        appData.lastUpdated = Date.now();
+        persistData();
+        renderBucketList();
+
+        fetch('/api/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(appData)
+        }).catch(() => {});
+      });
+
+      container.appendChild(itemEl);
+    });
+  }
+
+  function addNewWish() {
+    const input = document.getElementById('new-wish-input');
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+
+    if (!appData.bucketList) appData.bucketList = [];
+    appData.bucketList.push({
+      id: Date.now(),
+      text: text,
+      done: false
+    });
+
+    input.value = '';
+    appData.lastUpdated = Date.now();
+    persistData();
+    renderBucketList();
+
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
+    }
+
+    const container = document.getElementById('bucketlist-items-container');
+    if (container) container.scrollTop = container.scrollHeight;
+
+    fetch('/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(appData)
+    }).then(() => {
+      showSyncToast('✨ Đã thêm điều ước mới và đồng bộ sang mọi thiết bị!');
+    }).catch(() => {});
+  }
+
+  // --- Feature 3: Anniversary Card Generator (Xuất Thiệp Ảnh Kỷ Niệm) ---
+  let generatedCardDataUrl = null;
+
+  async function generateAnniversaryCard() {
+    const modal = document.getElementById('card-preview-modal');
+    const spinner = document.getElementById('card-loading-spinner');
+    const previewImg = document.getElementById('card-preview-img');
+
+    if (modal) modal.classList.add('open');
+    if (spinner) spinner.classList.remove('hidden');
+    if (previewImg) previewImg.classList.add('hidden');
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1440;
+    const ctx = canvas.getContext('2d');
+
+    // 1. Nebula background gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1440);
+    bgGrad.addColorStop(0, '#0a0314');
+    bgGrad.addColorStop(0.3, '#1c0734');
+    bgGrad.addColorStop(0.7, '#2a0845');
+    bgGrad.addColorStop(1, '#0b001a');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 1080, 1440);
+
+    // 2. Stars
+    ctx.fillStyle = '#ffffff';
+    for (let i = 0; i < 220; i++) {
+      const sx = Math.random() * 1080;
+      const sy = Math.random() * 1440;
+      const sr = Math.random() * 2.2 + 0.5;
+      const alpha = Math.random() * 0.85 + 0.15;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // 3. Gold Foil Double Border
+    ctx.strokeStyle = '#ffd166';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(40, 40, 1000, 1360);
+
+    ctx.strokeStyle = 'rgba(255, 117, 143, 0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(52, 52, 976, 1336);
+
+    // Corner Ornaments
+    const corners = [
+      [40, 40], [1040, 40], [40, 1400], [1040, 1400]
+    ];
+    ctx.fillStyle = '#ffd166';
+    corners.forEach(([cx, cy]) => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // 4. Header Badge
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ff9cb7';
+    ctx.font = '600 24px Inter, sans-serif';
+    ctx.fillText('✨ OUR LOVE STORY ✨', 540, 120);
+
+    // Main Title
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 54px "Playfair Display", serif';
+    ctx.fillText('Kỷ Niệm Tình Yêu', 540, 190);
+
+    // Couple Names
+    ctx.fillStyle = '#ff758f';
+    ctx.font = 'bold 44px "Dancing Script", cursive, sans-serif';
+    ctx.fillText(`${appData.partner1}  💖  ${appData.partner2}`, 540, 255);
+
+    // Calculate days together
+    const start = new Date(appData.startDate).getTime();
+    const now = Date.now();
+    const days = Math.max(0, Math.floor((now - start) / (1000 * 60 * 60 * 24)));
+
+    // Days Badge
+    ctx.fillStyle = 'rgba(255, 209, 102, 0.15)';
+    ctx.strokeStyle = '#ffd166';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(340, 290, 400, 56, [28]);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffd166';
+    ctx.font = '600 26px Inter, sans-serif';
+    ctx.fillText(`🗓️ ${days} Ngày Yêu Thương`, 540, 328);
+
+    // 5. Draw Featured Polaroid Photo
+    const featuredPhotoSrc = (appData.milestones && appData.milestones[appData.milestones.length - 1] && appData.milestones[appData.milestones.length - 1].image) || 'assets/milestone_6.jpg';
+
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      await new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve;
+        img.src = featuredPhotoSrc;
+      });
+
+      // Polaroid Card Frame
+      const pX = 190, pY = 385, pW = 700, pH = 730;
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+      ctx.shadowBlur = 35;
+      ctx.shadowOffsetY = 15;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(pX, pY, pW, pH, [16]);
+      ctx.fill();
+      ctx.restore();
+
+      // Draw photo inside Polaroid
+      const imgX = pX + 25, imgY = pY + 25, imgW = pW - 50, imgH = 550;
+      if (img.width) {
+        const imgRatio = img.width / img.height;
+        const boxRatio = imgW / imgH;
+        let sWidth = img.width, sHeight = img.height, sx = 0, sy = 0;
+        if (imgRatio > boxRatio) {
+          sWidth = img.height * boxRatio;
+          sx = (img.width - sWidth) / 2;
+        } else {
+          sHeight = img.width / boxRatio;
+          sy = (img.height - sHeight) / 2;
+        }
+        ctx.drawImage(img, sx, sy, sWidth, sHeight, imgX, imgY, imgW, imgH);
+      } else {
+        ctx.fillStyle = '#fce4ec';
+        ctx.fillRect(imgX, imgY, imgW, imgH);
+      }
+
+      // Polaroid caption inside card
+      ctx.fillStyle = '#222222';
+      ctx.font = '600 28px "Dancing Script", cursive, sans-serif';
+      const lastMs = appData.milestones[appData.milestones.length - 1];
+      const capText = lastMs && lastMs.caption ? lastMs.caption : 'Vạn dặm tương lai cùng em... 💕';
+      ctx.fillText(capText, 540, pY + imgH + 75);
+
+    } catch (err) {
+      console.warn('Card image error:', err);
+    }
+
+    // 6. Bottom Sweet Quote
+    const quote = (appData.milestones && appData.milestones[appData.milestones.length - 1] && appData.milestones[appData.milestones.length - 1].quote) ||
+      '“365 ngày vừa qua chỉ là chương mở đầu cho câu chuyện tình yêu trăm năm của hai chúng ta.”';
+
+    ctx.fillStyle = '#ffccd9';
+    ctx.font = 'italic 25px "Merriweather", serif';
+    ctx.fillText(`“${quote.replace(/[“”]/g, '')}”`, 540, 1200);
+
+    // 7. Footer Stamp Date
+    const todayStr = new Date().toLocaleDateString('vi-VN');
+    ctx.fillStyle = '#ffd166';
+    ctx.font = '500 20px Inter, sans-serif';
+    ctx.fillText(`✨ ${todayStr} • Mãi Mãi Một Tình Yêu ✨`, 540, 1280);
+
+    generatedCardDataUrl = canvas.toDataURL('image/png');
+    if (previewImg) {
+      previewImg.src = generatedCardDataUrl;
+      previewImg.classList.remove('hidden');
+    }
+    if (spinner) spinner.classList.add('hidden');
+  }
+
+  function downloadAnniversaryCard() {
+    if (!generatedCardDataUrl) return;
+    const a = document.createElement('a');
+    a.href = generatedCardDataUrl;
+    a.download = `Thiep_Ky_Niem_${appData.partner1}_${appData.partner2}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
+    }
+    showSyncToast('📸 Đã tải thiệp kỷ niệm về máy của bạn!');
+  }
+
+  // --- Feature 4: Touch Heart Particle & Harmonic Chime ---
+  const CHIME_FREQS = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
+  let chimeIndex = 0;
+  let tapAudioCtx = null;
+
+  function playTouchChime() {
+    try {
+      if (!tapAudioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        tapAudioCtx = new AudioContext();
+      }
+      if (tapAudioCtx.state === 'suspended') {
+        tapAudioCtx.resume();
+      }
+      const freq = CHIME_FREQS[chimeIndex % CHIME_FREQS.length];
+      chimeIndex++;
+
+      const osc = tapAudioCtx.createOscillator();
+      const gain = tapAudioCtx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, tapAudioCtx.currentTime);
+
+      gain.gain.setValueAtTime(0.001, tapAudioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.035, tapAudioCtx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, tapAudioCtx.currentTime + 0.65);
+
+      osc.connect(gain);
+      gain.connect(tapAudioCtx.destination);
+
+      osc.start(tapAudioCtx.currentTime);
+      osc.stop(tapAudioCtx.currentTime + 0.65);
+    } catch (e) {}
+  }
+
+  function spawnTouchHearts(x, y) {
+    const container = document.getElementById('touch-effects-container');
+    if (!container) return;
+
+    const emojis = ['💖', '💕', '💗', '✨', '🌸', '🌹'];
+    const count = 4;
+
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'touch-heart-particle';
+      p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+      const distance = 30 + Math.random() * 40;
+      const dx = Math.cos(angle) * distance;
+      const dy = Math.sin(angle) * distance - 40;
+      const rot = (Math.random() - 0.5) * 50;
+
+      p.style.left = `${x}px`;
+      p.style.top = `${y}px`;
+      p.style.setProperty('--dx', `${dx}px`);
+      p.style.setProperty('--dy', `${dy}px`);
+      p.style.setProperty('--rot', `${rot}deg`);
+
+      container.appendChild(p);
+      setTimeout(() => p.remove(), 1200);
+    }
+
+    playTouchChime();
+  }
 
   /* =========================================================================
      APP INITIALIZATION & EVENT BINDINGS
@@ -1659,6 +2150,65 @@
     if (btnForceSync) {
       btnForceSync.addEventListener('click', () => checkAndSyncServerData(true));
     }
+
+    // --- 11. Couple Bucket List Event Listeners ---
+    const btnBucketList = document.getElementById('btn-bucket-list');
+    const btnCloseBucketlist = document.getElementById('btn-close-bucketlist');
+    const btnCloseBucketlistBottom = document.getElementById('btn-close-bucketlist-bottom');
+    const bucketlistBackdrop = document.getElementById('bucketlist-modal-backdrop');
+    const btnAddWish = document.getElementById('btn-add-wish');
+    const newWishInput = document.getElementById('new-wish-input');
+
+    if (btnBucketList) btnBucketList.addEventListener('click', openBucketListModal);
+    if (btnCloseBucketlist) btnCloseBucketlist.addEventListener('click', closeBucketListModal);
+    if (btnCloseBucketlistBottom) btnCloseBucketlistBottom.addEventListener('click', closeBucketListModal);
+    if (bucketlistBackdrop) bucketlistBackdrop.addEventListener('click', closeBucketListModal);
+    if (btnAddWish) btnAddWish.addEventListener('click', addNewWish);
+    if (newWishInput) {
+      newWishInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') addNewWish();
+      });
+    }
+
+    // --- 12. Time Capsule Event Listeners ---
+    const btnTimeCapsule = document.getElementById('btn-time-capsule');
+    const btnCloseTimecapsule = document.getElementById('btn-close-timecapsule');
+    const btnCloseTimecapsuleBottom = document.getElementById('btn-close-timecapsule-bottom');
+    const timecapsuleBackdrop = document.getElementById('timecapsule-modal-backdrop');
+
+    if (btnTimeCapsule) btnTimeCapsule.addEventListener('click', openTimeCapsuleModal);
+    if (btnCloseTimecapsule) btnCloseTimecapsule.addEventListener('click', closeTimeCapsuleModal);
+    if (btnCloseTimecapsuleBottom) btnCloseTimecapsuleBottom.addEventListener('click', closeTimeCapsuleModal);
+    if (timecapsuleBackdrop) timecapsuleBackdrop.addEventListener('click', closeTimeCapsuleModal);
+
+    // --- 13. Anniversary Card Generator Event Listeners ---
+    const btnExportCard = document.getElementById('btn-export-card');
+    const btnCloseCardModal = document.getElementById('btn-close-card-modal');
+    const btnCloseCardBottom = document.getElementById('btn-close-card-bottom');
+    const cardModalBackdrop = document.getElementById('card-preview-modal-backdrop');
+    const btnDownloadCard = document.getElementById('btn-download-card');
+
+    if (btnExportCard) btnExportCard.addEventListener('click', generateAnniversaryCard);
+    if (btnCloseCardModal) btnCloseCardModal.addEventListener('click', () => {
+      const m = document.getElementById('card-preview-modal');
+      if (m) m.classList.remove('open');
+    });
+    if (btnCloseCardBottom) btnCloseCardBottom.addEventListener('click', () => {
+      const m = document.getElementById('card-preview-modal');
+      if (m) m.classList.remove('open');
+    });
+    if (cardModalBackdrop) cardModalBackdrop.addEventListener('click', () => {
+      const m = document.getElementById('card-preview-modal');
+      if (m) m.classList.remove('open');
+    });
+    if (btnDownloadCard) btnDownloadCard.addEventListener('click', downloadAnniversaryCard);
+
+    // --- 14. Global Touch Heart Sparkle & Chime ---
+    window.addEventListener('pointerdown', (e) => {
+      const target = e.target;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return;
+      spawnTouchHearts(e.clientX, e.clientY);
+    }, { passive: true });
 
     // Initial check with server
     checkAndSyncServerData(false);

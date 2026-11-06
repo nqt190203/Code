@@ -73,6 +73,15 @@
       <button id="btn-meteor-shower" class="pill-btn meteor-btn" title="Kích hoạt mưa sao băng lời chúc & icon cute">
         🌠 Mưa Sao Băng
       </button>
+      <button id="btn-bucket-list" class="pill-btn wish-btn" title="Danh sách điều ước & mục tiêu đôi mình">
+        📜 Điều Ước
+      </button>
+      <button id="btn-time-capsule" class="pill-btn capsule-btn" title="Bức thư gửi tương lai - Hộp thư hẹn giờ">
+        💌 Thư Tương Lai
+      </button>
+      <button id="btn-export-card" class="pill-btn card-btn" title="Xuất thiệp ảnh kỷ niệm đẹp để tải về máy">
+        📸 Xuất Thiệp
+      </button>
       <button id="btn-edit-memories" class="pill-btn" title="Tùy chỉnh thông tin & ảnh kỷ niệm">
         ✏️ Tùy chỉnh
       </button>
@@ -281,6 +290,23 @@
           </div>
         </div>
 
+        <!-- Time Capsule Config -->
+        <div class="form-section">
+          <h3 class="section-title">💌 Cài Đặt Thư Tương Lai (Time Capsule)</h3>
+          <div class="form-group">
+            <label for="edit-capsule-title">Tiêu đề bức thư hẹn ước:</label>
+            <input type="text" id="edit-capsule-title" placeholder="Ví dụ: Bức Thư Gửi Em Vào Thời Khắc Giao Thừa">
+          </div>
+          <div class="form-group">
+            <label for="edit-capsule-date">Thời điểm tự động mở khóa (Ngày & Giờ):</label>
+            <input type="datetime-local" id="edit-capsule-date">
+          </div>
+          <div class="form-group">
+            <label for="edit-capsule-message">Nội dung bức thư bí mật gửi tương lai:</label>
+            <textarea id="edit-capsule-message" rows="4" placeholder="Viết những lời thì thầm tâm sự bạn muốn gửi đến người ấy trong tương lai..."></textarea>
+          </div>
+        </div>
+
         <!-- Cloud Sync & Multi-device Status -->
         <div class="form-section sync-section">
           <h3 class="section-title">☁️ Đồng Bộ Neon Cloud 24/7 (Đa Thiết Bị)</h3>
@@ -301,6 +327,134 @@
       </div>
     </div>
   </div>
+
+  <!-- BUCKET LIST MODAL (Ý tưởng 1) -->
+  <div id="bucketlist-modal" class="modal-overlay">
+    <div class="modal-backdrop" id="bucketlist-modal-backdrop"></div>
+    <div class="modal-card bucketlist-card">
+      <button class="modal-close-btn" id="btn-close-bucketlist">&times;</button>
+      <div class="modal-header">
+        <div class="modal-planet-badge">✨ Cuốn Sổ Điều Ước Đôi Mình</div>
+        <h2 class="modal-title">Những Điều Chúng Mình Sẽ Cùng Nhau Thực Hiện</h2>
+        <p class="edit-intro">Từng ước mơ nhỏ bé khi có hai người cùng chung bước đều sẽ trở thành hiện thực ngọt ngào 💕</p>
+      </div>
+
+      <div class="bucketlist-progress-section">
+        <div class="progress-info">
+          <span id="bucketlist-progress-text">Đã hoàn thành: 1 / 5 điều ước (20%)</span>
+          <span class="progress-badge">🌟 Tình Yêu Thăng Hoa</span>
+        </div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="bucketlist-progress-fill" style="width: 20%;"></div>
+        </div>
+      </div>
+
+      <div class="add-wish-bar">
+        <input type="text" id="new-wish-input" placeholder="✨ Nhập một điều ước mới của hai bạn..." maxlength="120">
+        <button type="button" id="btn-add-wish" class="pill-btn primary">➕ Thêm</button>
+      </div>
+
+      <div class="bucketlist-container" id="bucketlist-items-container">
+        <!-- Rendered dynamically via JS -->
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="btn-close-bucketlist-bottom" class="nav-milestone-btn primary">Đóng lại</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIME CAPSULE MODAL (Ý tưởng 2) -->
+  <div id="timecapsule-modal" class="modal-overlay">
+    <div class="modal-backdrop" id="timecapsule-modal-backdrop"></div>
+    <div class="modal-card timecapsule-card">
+      <button class="modal-close-btn" id="btn-close-timecapsule">&times;</button>
+      
+      <!-- LOCKED STATE -->
+      <div id="capsule-locked-view" class="capsule-view">
+        <div class="modal-header">
+          <div class="modal-planet-badge">⏳ Hộp Thư Thời Gian Hẹn Giờ</div>
+          <h2 class="modal-title" id="capsule-locked-title">Bức Thư Gửi Tương Lai</h2>
+        </div>
+        <div class="capsule-padlock-container">
+          <div class="capsule-glowing-lock">🔒</div>
+          <div class="capsule-lock-sparkles">✨ ✨ ✨</div>
+        </div>
+        <div class="capsule-countdown-box">
+          <p class="capsule-target-hint">Bức thư bí mật đang được niêm phong, sẽ tự động mở khóa vào:</p>
+          <div class="capsule-target-date" id="capsule-unlock-date-display">31/12/2026 23:59</div>
+          <div class="capsule-timer" id="capsule-countdown-timer">
+            <div class="timer-segment">
+              <span class="segment-value" id="capsule-days">00</span>
+              <span class="segment-label">Ngày</span>
+            </div>
+            <div class="timer-colon">:</div>
+            <div class="timer-segment">
+              <span class="segment-value" id="capsule-hours">00</span>
+              <span class="segment-label">Giờ</span>
+            </div>
+            <div class="timer-colon">:</div>
+            <div class="timer-segment">
+              <span class="segment-value" id="capsule-mins">00</span>
+              <span class="segment-label">Phút</span>
+            </div>
+            <div class="timer-colon">:</div>
+            <div class="timer-segment">
+              <span class="segment-value" id="capsule-secs">00</span>
+              <span class="segment-label">Giây</span>
+            </div>
+          </div>
+          <p class="capsule-romantic-whisper">
+            "Có những tâm sự cần thời gian ủ men để trở nên ngọt ngào nhất. Hãy cùng anh đếm ngược đến khoảnh khắc hẹn ước nhé! 💖"
+          </p>
+        </div>
+      </div>
+
+      <!-- UNLOCKED STATE -->
+      <div id="capsule-unlocked-view" class="capsule-view hidden">
+        <div class="modal-header">
+          <div class="modal-planet-badge">🔓 Khoảnh Khắc Hẹn Ước Đã Đến</div>
+          <h2 class="modal-title" id="capsule-unlocked-title">Bức Thư Thời Gian Đã Mở Khóa</h2>
+        </div>
+        <div class="story-box vintage-letter-paper capsule-letter-body">
+          <div class="letter-stamp">💌 Hẹn Ước Trăm Năm</div>
+          <h3 class="story-heading" id="capsule-unlocked-letter-heading">Thư Gửi Người Anh Yêu</h3>
+          <p class="story-text" id="capsule-unlocked-content">Nội dung bức thư...</p>
+          <div class="letter-sign" id="capsule-unlocked-sign">Mãi yêu em, Anh ❤️</div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="btn-close-timecapsule-bottom" class="nav-milestone-btn primary">Đóng lại</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANNIVERSARY CARD GENERATOR MODAL (Ý tưởng 3) -->
+  <div id="card-preview-modal" class="modal-overlay">
+    <div class="modal-backdrop" id="card-preview-modal-backdrop"></div>
+    <div class="modal-card card-preview-card">
+      <button class="modal-close-btn" id="btn-close-card-modal">&times;</button>
+      <div class="modal-header">
+        <div class="modal-planet-badge">📸 Thiệp Kỷ Niệm Tình Yêu</div>
+        <h2 class="modal-title">Tấm Thiệp Kỷ Niệm Của Hai Bạn</h2>
+        <p class="edit-intro">Thiệp được thiết kế tự động chuẩn tỷ lệ hình nền điện thoại & story, sẵn sàng tải về máy bất cứ lúc nào!</p>
+      </div>
+
+      <div class="card-render-container" id="card-render-container">
+        <div class="card-loading-spinner" id="card-loading-spinner">✨ Đang vẽ thiệp kỷ niệm lung linh...</div>
+        <img id="card-preview-img" class="card-preview-img hidden" alt="Thiệp Kỷ Niệm Tình Yêu">
+      </div>
+
+      <div class="modal-footer card-footer-actions">
+        <button type="button" id="btn-download-card" class="nav-milestone-btn primary">⬇️ Tải Ảnh Về Máy (PNG)</button>
+        <button type="button" id="btn-close-card-bottom" class="nav-milestone-btn outline">Đóng lại</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOUCH HEART & CHIME PARTICLES CONTAINER (Ý tưởng 4) -->
+  <div id="touch-effects-container" class="touch-effects-container" aria-hidden="true"></div>
 
   <!-- Application Logic -->
   <script src="scene3d.js"></script>
