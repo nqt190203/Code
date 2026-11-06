@@ -30,3 +30,4 @@ inputs/
 
 
 .vercel
+.env*
