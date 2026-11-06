@@ -538,10 +538,11 @@
     appData.milestones.forEach((item, idx) => {
       const btn = document.createElement('button');
       btn.className = `timeline-node-btn ${idx === currentMilestoneIndex ? 'active' : ''}`;
-      btn.title = `${item.title} (${item.date})`;
+      const name = item.planetName || `Mốc ${idx + 1}`;
+      btn.title = `${name} (${item.date})`;
       btn.innerHTML = `
         <span class="timeline-node-dot"></span>
-        <span class="timeline-node-label">${idx + 1}. ${item.title.split(' ')[0]}</span>
+        <span class="timeline-node-label">${idx + 1}. ${name.replace('Hành Tinh ', '')}</span>
       `;
 
       btn.addEventListener('click', () => {
@@ -1034,8 +1035,8 @@
     }
 
     show(milestone) {
-      if (this.envelopeTitle) this.envelopeTitle.textContent = milestone.title;
-      if (this.envelopeTag) this.envelopeTag.textContent = `🪐 ${milestone.planetName.toUpperCase()}`;
+      if (this.envelopeTitle) this.envelopeTitle.textContent = milestone.planetName || milestone.date || 'Bức Thư Thời Gian';
+      if (this.envelopeTag) this.envelopeTag.textContent = `🪐 ${(milestone.planetName || milestone.date).toUpperCase()}`;
 
       // Reset to sealed envelope state
       if (this.overlay) this.overlay.classList.remove('unsealed');
@@ -1094,14 +1095,15 @@
     const item = appData.milestones[index];
 
     // Populate modal fields
-    document.getElementById('modal-planet-badge').textContent = `🪐 ${item.planetName}`;
+    document.getElementById('modal-planet-badge').textContent = `🪐 ${item.planetName || 'Mốc ' + (index + 1)}`;
     const atmBadge = document.getElementById('modal-atmosphere-badge');
     if (atmBadge) atmBadge.textContent = item.atmosphereName || '✨ Bầu Khí Quyển Kỷ Niệm';
 
-    document.getElementById('modal-milestone-title').textContent = item.title;
+    const titleEl = document.getElementById('modal-milestone-title');
+    if (titleEl) titleEl.textContent = item.planetName || item.date || 'Kỷ Niệm Yêu Thương';
     document.getElementById('modal-milestone-date').textContent = `📅 ${item.date}`;
     document.getElementById('modal-image').src = item.image;
-    document.getElementById('modal-caption').textContent = item.caption;
+    document.getElementById('modal-caption').textContent = item.caption || item.date;
     document.getElementById('modal-story-text').textContent = item.story;
     document.getElementById('modal-quote-text').textContent = item.quote;
 
@@ -1109,9 +1111,6 @@
     if (secretTextEl) {
       secretTextEl.textContent = item.secretMessage || 'Anh yêu em nhiều lắm! ❤️';
     }
-
-    document.getElementById('modal-stat-feeling').textContent = `Cảm xúc: ${item.feeling}`;
-    document.getElementById('modal-stat-location').textContent = `Địa điểm: ${item.location}`;
 
     // Update nav button states
     btnPrevMilestone.disabled = index === 0;
@@ -1163,61 +1162,82 @@
   /* =========================================================================
      CUSTOMIZER MODAL
      ========================================================================= */
-  function openCustomizerModal() {
-    document.getElementById('edit-partner1').value = appData.partner1;
-    document.getElementById('edit-partner2').value = appData.partner2;
-    document.getElementById('edit-start-date').value = appData.startDate;
+  const ATMOSPHERE_OPTIONS = [
+    { id: 'book_pages', name: '📚 Trang Sách & Ánh Sao' },
+    { id: 'gem_cafe', name: '☕ Cà Phê & Lắc Pha Lê' },
+    { id: 'fireworks_midnight', name: '🎆 Pháo Hoa Giao Thừa' },
+    { id: 'hoan_kiem_autumn', name: '🍂 Lá Vàng & Hồ Gươm' },
+    { id: 'cozy_kitchen', name: '🍳 Bếp Lửa Cơm Nhà' },
+    { id: 'anniversary_roses', name: '🌹 Mưa Cánh Hoa Hồng & Vô Cực' },
+  ];
 
+  const ATMOSPHERE_NAMES = {
+    book_pages: '📚 Trang Sách & Ánh Sao',
+    gem_cafe: '☕ Cà Phê & Lắc Pha Lê',
+    fireworks_midnight: '🎆 Pháo Hoa Giao Thừa',
+    hoan_kiem_autumn: '🍂 Lá Vàng & Hồ Gươm',
+    cozy_kitchen: '🍳 Bếp Lửa Cơm Nhà',
+    anniversary_roses: '🌹 Mưa Cánh Hoa Hồng & Vô Cực',
+  };
+
+  let editingMilestones = [];
+
+  function syncEditingMilestonesFromDOM() {
+    if (!editModal) return;
+    const items = editModal.querySelectorAll('.milestone-edit-item');
+    items.forEach((itemEl, idx) => {
+      if (!editingMilestones[idx]) return;
+      const planetNameInput = itemEl.querySelector('.edit-planet-name');
+      const dateInput = itemEl.querySelector('.edit-date');
+      const atmosphereSelect = itemEl.querySelector('.edit-atmosphere');
+      const storyTextarea = itemEl.querySelector('.edit-story');
+      const quoteInput = itemEl.querySelector('.edit-quote');
+      const secretInput = itemEl.querySelector('.edit-secret');
+
+      if (planetNameInput) editingMilestones[idx].planetName = planetNameInput.value.trim();
+      if (dateInput) editingMilestones[idx].date = dateInput.value.trim();
+      if (atmosphereSelect) {
+        editingMilestones[idx].atmosphereType = atmosphereSelect.value;
+        editingMilestones[idx].atmosphereName = ATMOSPHERE_NAMES[atmosphereSelect.value] || '✨ Kỷ Niệm';
+      }
+      if (storyTextarea) editingMilestones[idx].story = storyTextarea.value.trim();
+      if (quoteInput) editingMilestones[idx].quote = quoteInput.value.trim();
+      if (secretInput) editingMilestones[idx].secretMessage = secretInput.value.trim();
+    });
+  }
+
+  function renderCustomizerMilestonesList() {
     const listContainer = document.getElementById('milestones-edit-list');
+    if (!listContainer) return;
     listContainer.innerHTML = '';
 
-    const ATMOSPHERE_OPTIONS = [
-      { id: 'book_pages', name: '📚 Trang Sách & Ánh Sao' },
-      { id: 'gem_cafe', name: '☕ Cà Phê & Lắc Pha Lê' },
-      { id: 'fireworks_midnight', name: '🎆 Pháo Hoa Giao Thừa' },
-      { id: 'hoan_kiem_autumn', name: '🍂 Lá Vàng & Hồ Gươm' },
-      { id: 'cozy_kitchen', name: '🍳 Bếp Lửa Cơm Nhà' },
-      { id: 'anniversary_roses', name: '🌹 Mưa Cánh Hoa Hồng & Vô Cực' },
-    ];
-
-    appData.milestones.forEach((m, idx) => {
+    editingMilestones.forEach((m, idx) => {
       const itemEl = document.createElement('div');
       itemEl.className = 'milestone-edit-item';
       itemEl.innerHTML = `
         <div class="milestone-item-header">
-          <span>🪐 Mốc ${idx + 1}: ${m.planetName}</span>
-          <label class="btn-change-photo" style="cursor: pointer;">
-            📷 Thay ảnh
-            <input type="file" class="edit-photo-input" data-index="${idx}" accept="image/*" style="display: none;">
-          </label>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Tên hành tinh:</label>
-            <input type="text" class="edit-planet-name" data-index="${idx}" value="${m.planetName}">
-          </div>
-          <div class="form-group">
-            <label>Tiêu đề mốc kỷ niệm:</label>
-            <input type="text" class="edit-title" data-index="${idx}" value="${m.title}">
+          <span>🪐 Mốc ${idx + 1}: ${m.planetName || 'Hành Tinh ' + (idx + 1)}</span>
+          <div class="item-actions">
+            <label class="btn-change-photo" style="cursor: pointer;">
+              📷 Thay ảnh
+              <input type="file" class="edit-photo-input" data-index="${idx}" accept="image/*" style="display: none;">
+            </label>
+            <button type="button" class="btn-delete-milestone" data-index="${idx}" title="Xóa mốc kỷ niệm này">🗑️ Xóa</button>
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Ngày diễn ra:</label>
-            <input type="text" class="edit-date" data-index="${idx}" value="${m.date}">
+            <label>Tên mốc / Hành tinh:</label>
+            <input type="text" class="edit-planet-name" data-index="${idx}" value="${m.planetName || ''}">
           </div>
           <div class="form-group">
-            <label>Địa điểm:</label>
-            <input type="text" class="edit-location" data-index="${idx}" value="${m.location}">
+            <label>Thời gian / Ngày kỷ niệm:</label>
+            <input type="text" class="edit-date" data-index="${idx}" value="${m.date || ''}">
           </div>
         </div>
         <div class="form-row">
-          <div class="form-group">
-            <label>Cảm xúc lúc ấy:</label>
-            <input type="text" class="edit-feeling" data-index="${idx}" value="${m.feeling}">
-          </div>
-          <div class="form-group">
-            <label>Bầu không khí tiểu cảnh:</label>
+          <div class="form-group full-width">
+            <label>Bầu không khí tiểu cảnh (Hiệu ứng hạt rơi):</label>
             <select class="edit-atmosphere" data-index="${idx}">
               ${ATMOSPHERE_OPTIONS.map(opt => `<option value="${opt.id}" ${m.atmosphereType === opt.id ? 'selected' : ''}>${opt.name}</option>`).join('')}
             </select>
@@ -1225,11 +1245,11 @@
         </div>
         <div class="form-group">
           <label>Nội dung bức thư kỷ niệm:</label>
-          <textarea class="edit-story" data-index="${idx}" rows="3">${m.story}</textarea>
+          <textarea class="edit-story" data-index="${idx}" rows="3">${m.story || ''}</textarea>
         </div>
         <div class="form-group">
           <label>Lời nhắn / Câu nói ngọt ngào (Quote):</label>
-          <input type="text" class="edit-quote" data-index="${idx}" value="${m.quote}">
+          <input type="text" class="edit-quote" data-index="${idx}" value="${m.quote || ''}">
         </div>
         <div class="form-group">
           <label>🔒 Lời nhắn bí mật (Để người yêu cào xem):</label>
@@ -1237,82 +1257,106 @@
         </div>
       `;
 
-      // Photo upload change listener with auto-compression and server sync
+      // Photo upload change listener
       const photoInput = itemEl.querySelector('.edit-photo-input');
       photoInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
           try {
-            showSyncToast(`⏳ Đang xử lý và đồng bộ ảnh mốc ${idx + 1}...`);
+            showSyncToast(`⏳ Đang nén và chuẩn bị ảnh cho mốc ${idx + 1}...`);
             const compressed = await compressImage(file);
-            await uploadMilestonePhoto(m.id, compressed);
-            renderBottomTimeline();
+            m.image = compressed;
+            showSyncToast(`✅ Đã chọn ảnh mới cho mốc ${idx + 1}! Bấm "Lưu Thay Đổi" để hoàn tất.`);
           } catch (err) {
             console.error('Photo upload error:', err);
           }
         }
       });
 
+      // Delete milestone listener
+      const btnDelete = itemEl.querySelector('.btn-delete-milestone');
+      btnDelete.addEventListener('click', () => {
+        if (editingMilestones.length <= 1) {
+          alert('Cần giữ lại ít nhất 1 mốc kỷ niệm trong vũ trụ của hai bạn nhé!');
+          return;
+        }
+        if (confirm(`Bạn có chắc muốn xóa mốc "${m.planetName || 'Mốc ' + (idx + 1)}"?`)) {
+          syncEditingMilestonesFromDOM();
+          editingMilestones.splice(idx, 1);
+          renderCustomizerMilestonesList();
+        }
+      });
+
       listContainer.appendChild(itemEl);
     });
+  }
+
+  function openCustomizerModal() {
+    document.getElementById('edit-partner1').value = appData.partner1;
+    document.getElementById('edit-partner2').value = appData.partner2;
+    document.getElementById('edit-start-date').value = appData.startDate;
+
+    editingMilestones = JSON.parse(JSON.stringify(appData.milestones));
+    renderCustomizerMilestonesList();
+
+    // Attach Add Milestone button handler
+    const btnAddMilestone = document.getElementById('btn-add-milestone');
+    if (btnAddMilestone) {
+      btnAddMilestone.onclick = () => {
+        syncEditingMilestonesFromDOM();
+        const newIdx = editingMilestones.length + 1;
+        const defaultAtmospheres = ['book_pages', 'gem_cafe', 'fireworks_midnight', 'hoan_kiem_autumn', 'cozy_kitchen', 'anniversary_roses'];
+        const chosenAtm = defaultAtmospheres[(newIdx - 1) % defaultAtmospheres.length];
+
+        editingMilestones.push({
+          id: Date.now(),
+          planetName: `Hành Tinh Số ${newIdx}`,
+          date: 'Ngày Kỷ Niệm',
+          image: `assets/milestone_${((newIdx - 1) % 6) + 1}.jpg`,
+          caption: 'Khoảnh khắc đáng nhớ của chúng mình...',
+          atmosphereType: chosenAtm,
+          atmosphereName: ATMOSPHERE_NAMES[chosenAtm] || '✨ Kỷ Niệm',
+          story: 'Viết nên câu chuyện kỷ niệm ngọt ngào tại đây...',
+          quote: 'Yêu em hơn mỗi ngày!',
+          secretMessage: 'Anh luôn yêu và trân trọng em mỗi ngày! ❤️'
+        });
+        renderCustomizerMilestonesList();
+        const listContainer = document.getElementById('milestones-edit-list');
+        if (listContainer) listContainer.scrollTop = listContainer.scrollHeight;
+      };
+    }
 
     editModal.classList.add('open');
   }
 
   function saveCustomizerData() {
+    syncEditingMilestonesFromDOM();
+
     appData.partner1 = document.getElementById('edit-partner1').value.trim() || 'Anh';
     appData.partner2 = document.getElementById('edit-partner2').value.trim() || 'Em';
     appData.startDate = document.getElementById('edit-start-date').value || '2025-10-21';
-
-    // Read milestone inputs
-    const planetNames = editModal.querySelectorAll('.edit-planet-name');
-    const titles = editModal.querySelectorAll('.edit-title');
-    const dates = editModal.querySelectorAll('.edit-date');
-    const locations = editModal.querySelectorAll('.edit-location');
-    const feelings = editModal.querySelectorAll('.edit-feeling');
-    const atmospheres = editModal.querySelectorAll('.edit-atmosphere');
-    const stories = editModal.querySelectorAll('.edit-story');
-    const quotes = editModal.querySelectorAll('.edit-quote');
-    const secrets = editModal.querySelectorAll('.edit-secret');
-
-    const ATMOSPHERE_NAMES = {
-      book_pages: '📚 Trang Sách & Ánh Sao',
-      gem_cafe: '☕ Cà Phê & Lắc Pha Lê',
-      fireworks_midnight: '🎆 Pháo Hoa Giao Thừa',
-      hoan_kiem_autumn: '🍂 Lá Vàng & Hồ Gươm',
-      cozy_kitchen: '🍳 Bếp Lửa Cơm Nhà',
-      anniversary_roses: '🌹 Mưa Cánh Hoa Hồng & Vô Cực',
-    };
-
-    titles.forEach((el, idx) => {
-      if (planetNames[idx]) appData.milestones[idx].planetName = planetNames[idx].value.trim();
-      appData.milestones[idx].title = el.value.trim();
-      if (dates[idx]) appData.milestones[idx].date = dates[idx].value.trim();
-      if (locations[idx]) appData.milestones[idx].location = locations[idx].value.trim();
-      if (feelings[idx]) appData.milestones[idx].feeling = feelings[idx].value.trim();
-      if (atmospheres[idx]) {
-        appData.milestones[idx].atmosphereType = atmospheres[idx].value;
-        appData.milestones[idx].atmosphereName = ATMOSPHERE_NAMES[atmospheres[idx].value] || '✨ Kỷ Niệm';
-      }
-      if (stories[idx]) appData.milestones[idx].story = stories[idx].value.trim();
-      if (quotes[idx]) appData.milestones[idx].quote = quotes[idx].value.trim();
-      if (secrets[idx]) appData.milestones[idx].secretMessage = secrets[idx].value.trim();
-    });
+    appData.milestones = editingMilestones;
 
     appData.lastUpdated = Date.now();
     persistData();
     renderCoupleHeader();
     renderBottomTimeline();
     updateAnniversaryCounter();
+
+    // Rebuild 3D Universe and Planets dynamically
+    if (window.LoveScene && typeof window.LoveScene.rebuildPlanets === 'function') {
+      window.LoveScene.rebuildPlanets(appData.milestones);
+    }
+
     editModal.classList.remove('open');
 
-    // Sync with server if reachable
+    // Sync with Neon Cloud Database
     fetch('/api/data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(appData)
     }).then(() => {
-      showSyncToast('💾 Đã lưu và đồng bộ toàn bộ dữ liệu sang mọi thiết bị!');
+      showSyncToast('💾 Đã lưu và đồng bộ toàn bộ mốc kỷ niệm sang mọi thiết bị 24/7!');
     }).catch(() => {
       showSyncToast('💾 Đã lưu thay đổi vào trình duyệt!');
     });
@@ -1366,6 +1410,9 @@
     // 1. Initialize 3D Scene
     if (window.LoveScene) {
       window.LoveScene.init();
+      if (typeof window.LoveScene.rebuildPlanets === 'function' && appData.milestones) {
+        window.LoveScene.rebuildPlanets(appData.milestones);
+      }
 
       // Hook 3D events
       window.LoveScene.onBoxClick = () => {
@@ -1375,7 +1422,7 @@
       window.LoveScene.onPlanetHover = (idx, cfg, x, y) => {
         if (planetTooltip && appData.milestones[idx]) {
           const item = appData.milestones[idx];
-          tooltipTitle.textContent = item.title;
+          tooltipTitle.textContent = item.planetName || item.date || 'Kỷ Niệm';
           tooltipDate.textContent = item.date;
           planetTooltip.style.left = `${x}px`;
           planetTooltip.style.top = `${y}px`;

@@ -819,6 +819,152 @@ class LoveUniverseScene {
     this.build3DMeteors();
   }
 
+  rebuildPlanets(milestones) {
+    if (!milestones || milestones.length === 0) return;
+    this.currentMilestonesData = milestones;
+
+    // 1. Remove old planets from universeGroup
+    if (this.planets && this.planets.length > 0) {
+      this.planets.forEach(p => {
+        if (p.group) this.universeGroup.remove(p.group);
+      });
+      this.planets = [];
+    }
+
+    // 2. Remove old constellation tube
+    if (this.constellationLine) {
+      this.universeGroup.remove(this.constellationLine);
+      if (this.constellationLine.geometry) this.constellationLine.geometry.dispose();
+      this.constellationLine = null;
+    }
+
+    // 3. Clear badges
+    const container = document.getElementById('planet-badges-container');
+    if (container) container.innerHTML = '';
+    this.badgeElements = [];
+
+    // 4. Generate dynamic configurations
+    const n = milestones.length;
+    const basePalette = [
+      { color: 0x48bfe3, emissive: 0x0f3659, hasRings: false },
+      { color: 0x72efdd, emissive: 0x0c3766, hasRings: true, ringColor: 0xffd166 },
+      { color: 0xffaa00, emissive: 0x5e3a00, hasRings: true, ringColor: 0xff3377 },
+      { color: 0x256da6, emissive: 0x0e283d, hasRings: false },
+      { color: 0xfb8500, emissive: 0x471d00, hasRings: true, ringColor: 0xffd166 },
+      { color: 0x00b4d8, emissive: 0x023e8a, hasRings: true, ringColor: 0xffd166, isCrown: true },
+      { color: 0xe040fb, emissive: 0x4a148c, hasRings: true, ringColor: 0x72efdd },
+      { color: 0xff4081, emissive: 0x880e4f, hasRings: false },
+      { color: 0x00e676, emissive: 0x1b5e20, hasRings: true, ringColor: 0xffeb3b },
+    ];
+
+    const planetConfigs = milestones.map((m, idx) => {
+      const pal = basePalette[idx % basePalette.length];
+      const progress = n <= 1 ? 0.5 : idx / (n - 1);
+      const posX = -20 + progress * 48;
+      const posY = Math.sin(progress * Math.PI * 2.5) * 4.5 + ((idx % 2 === 0) ? -1 : 1.5);
+      const posZ = -14 + progress * 32 + Math.cos(progress * Math.PI * 2) * 4;
+
+      return {
+        name: m.planetName || `Hành Tinh ${idx + 1}`,
+        subtitle: m.date || `Mốc ${idx + 1}`,
+        color: pal.color,
+        emissive: pal.emissive,
+        radius: 1.15 + (idx === n - 1 ? 0.5 : 0.15 * Math.sin(idx)),
+        pos: new THREE.Vector3(posX, posY, posZ),
+        hasRings: pal.hasRings,
+        ringColor: pal.ringColor,
+        isCrown: idx === n - 1,
+      };
+    });
+
+    // 5. Constellation tube
+    if (planetConfigs.length > 1) {
+      const curvePoints = planetConfigs.map(p => p.pos);
+      const curve = new THREE.CatmullRomCurve3(curvePoints);
+      const tubeGeo = new THREE.TubeGeometry(curve, Math.max(40, n * 18), 0.09, 8, false);
+      const tubeMat = new THREE.MeshBasicMaterial({
+        color: 0x72efdd,
+        transparent: true,
+        opacity: 0.65,
+        blending: THREE.AdditiveBlending,
+      });
+      this.constellationLine = new THREE.Mesh(tubeGeo, tubeMat);
+      this.universeGroup.add(this.constellationLine);
+    }
+
+    // 6. Build Planet Meshes
+    planetConfigs.forEach((cfg, idx) => {
+      const planetGroup = new THREE.Group();
+      planetGroup.position.copy(cfg.pos);
+
+      const texture = this.createPlanetTexture(cfg.color);
+      const planetMat = new THREE.MeshStandardMaterial({
+        map: texture,
+        color: cfg.color,
+        roughness: 0.55,
+        metalness: 0.2,
+        emissive: cfg.emissive,
+        emissiveIntensity: 0.45,
+      });
+
+      const sphereGeo = new THREE.SphereGeometry(cfg.radius, 48, 48);
+      const sphereMesh = new THREE.Mesh(sphereGeo, planetMat);
+      sphereMesh.userData = { milestoneIndex: idx, config: cfg };
+      planetGroup.add(sphereMesh);
+
+      // Aura
+      const auraColor = (idx === n - 1 || idx % 2 === 0) ? 0xffaa00 : 0x72efdd;
+      const glowGeo = new THREE.SphereGeometry(cfg.radius * 1.25, 32, 32);
+      const glowMat = new THREE.MeshBasicMaterial({
+        color: auraColor,
+        transparent: true,
+        opacity: 0.24,
+        blending: THREE.AdditiveBlending,
+        side: THREE.BackSide,
+      });
+      const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+      planetGroup.add(glowMesh);
+
+      // Rings
+      if (cfg.hasRings) {
+        const ringGeo = new THREE.RingGeometry(cfg.radius * 1.5, cfg.radius * 2.3, 48);
+        const ringMat = new THREE.MeshBasicMaterial({
+          color: cfg.ringColor || 0x72efdd,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.72,
+          blending: THREE.AdditiveBlending,
+        });
+        const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+        ringMesh.rotation.x = Math.PI / 2.3;
+        ringMesh.rotation.y = Math.PI / 6;
+        planetGroup.add(ringMesh);
+      }
+
+      // Halo Crown
+      if (cfg.isCrown) {
+        const crownGroup = this.createFireCrownHalo(cfg.radius * 2.5);
+        planetGroup.add(crownGroup);
+      }
+
+      // 3D Particles
+      const effects = this.buildPlanetMilestoneFeatures(idx % 6, cfg, planetGroup);
+
+      this.universeGroup.add(planetGroup);
+      this.planets.push({
+        group: planetGroup,
+        mesh: sphereMesh,
+        glow: glowMesh,
+        config: cfg,
+        index: idx,
+        effects,
+      });
+    });
+
+    // 7. Rebuild Badges
+    this.buildPlanetScreenBadges(milestones);
+  }
+
   build3DMeteors() {
     this.meteorsGroup = new THREE.Group();
     this.universeGroup.add(this.meteorsGroup);
@@ -1335,30 +1481,29 @@ class LoveUniverseScene {
   /* =========================================================================
      FLOATING PINNED SCREEN BADGES FOR EACH PLANET
      ========================================================================= */
-  buildPlanetScreenBadges() {
+  buildPlanetScreenBadges(milestones) {
     const container = document.getElementById('planet-badges-container');
     if (!container) return;
     container.innerHTML = '';
     this.badgeElements = [];
 
-    const BADGES = [
-      { num: 'Mốc 1', icon: '📖', title: 'Gặp Gỡ Mua Sách' },
-      { num: 'Mốc 2', icon: '☕', title: 'Chiếc Lắc & Cà Phê' },
-      { num: 'Mốc 3', icon: '🎆', title: 'Tỏ Tình Giao Thừa' },
-      { num: 'Mốc 4', icon: '🍂', title: 'Phố & Hồ Gươm' },
-      { num: 'Mốc 5', icon: '🍳', title: 'Bếp Ấm Anh Nấu' },
-      { num: 'Mốc 6', icon: '🌹', title: 'Tròn 1 Năm Yêu 💕' },
-    ];
+    const defaultIcons = ['📖', '☕', '🎆', '🍂', '🍳', '🌹', '✨', '💖', '💍', '🌟'];
+    const msList = milestones || this.currentMilestonesData;
 
-    BADGES.forEach((b, idx) => {
+    this.planets.forEach((p, idx) => {
+      const ms = msList && msList[idx] ? msList[idx] : null;
+      const tagText = `Mốc ${idx + 1}`;
+      const titleText = ms ? (ms.planetName || ms.date) : (p.config.name || `Hành Tinh ${idx + 1}`);
+      const icon = defaultIcons[idx % defaultIcons.length];
+
       const badge = document.createElement('div');
       badge.className = 'planet-floating-badge';
       badge.dataset.index = idx;
       badge.innerHTML = `
-        <span class="badge-icon">${b.icon}</span>
+        <span class="badge-icon">${icon}</span>
         <div class="badge-texts">
-          <span class="badge-tag">${b.num}</span>
-          <span class="badge-title">${b.title}</span>
+          <span class="badge-tag">${tagText}</span>
+          <span class="badge-title">${titleText}</span>
         </div>
         <span class="badge-arrow">🚀</span>
       `;

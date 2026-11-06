@@ -1253,6 +1253,38 @@ body {
   padding: 16px;
 }
 
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btn-add-milestone {
+  background: linear-gradient(135deg, rgba(255, 77, 109, 0.35) 0%, rgba(114, 239, 221, 0.3) 100%);
+  border: 1px solid rgba(255, 178, 196, 0.6);
+  border-radius: 20px;
+  padding: 8px 18px;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 15px rgba(255, 77, 109, 0.25);
+}
+
+.btn-add-milestone:hover {
+  background: linear-gradient(135deg, rgba(255, 77, 109, 0.6) 0%, rgba(114, 239, 221, 0.5) 100%);
+  border-color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 77, 109, 0.45);
+}
+
 .milestone-item-header {
   display: flex;
   justify-content: space-between;
@@ -1260,6 +1292,32 @@ body {
   margin-bottom: 12px;
   font-weight: 600;
   color: #ff9cb7;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.milestone-item-header .item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-delete-milestone {
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  background: rgba(239, 35, 60, 0.15);
+  border: 1px solid rgba(239, 35, 60, 0.45);
+  border-radius: 20px;
+  color: #ff8597;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-delete-milestone:hover {
+  background: rgba(239, 35, 60, 0.4);
+  color: #ffffff;
+  border-color: #ff3366;
+  transform: translateY(-1px);
 }
 
 /* ==========================================================================
