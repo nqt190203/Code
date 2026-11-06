@@ -334,6 +334,7 @@
 
   // DOM Elements
   const headerElem = document.getElementById('main-header');
+  const headerActions = document.getElementById('header-actions');
   const coupleNamesElem = document.getElementById('couple-names-display');
   const introOverlay = document.getElementById('gift-intro-overlay');
   const btnOpenGift = document.getElementById('btn-open-gift');
@@ -508,13 +509,20 @@
 
   function updateAudioButtonUI(isPlaying, songName) {
     if (btnToggleSound) {
+      const textElem = btnToggleSound.querySelector('.btn-text');
       if (isPlaying) {
         btnToggleSound.classList.add('playing');
-        btnToggleSound.querySelector('.btn-text').textContent = songName ? `Đang Phát: ${songName}` : 'Đang Phát';
+        if (textElem) {
+          textElem.textContent = songName || 'Đang Phát';
+        }
+        btnToggleSound.setAttribute('title', songName ? `Đang Phát: ${songName}` : 'Đang Phát Nhạc');
         if (soundIcon) soundIcon.textContent = '🎶';
       } else {
         btnToggleSound.classList.remove('playing');
-        btnToggleSound.querySelector('.btn-text').textContent = 'Bật Nhạc';
+        if (textElem) {
+          textElem.textContent = 'Bật Nhạc';
+        }
+        btnToggleSound.setAttribute('title', 'Bật/Tắt bài hát tình yêu');
         if (soundIcon) soundIcon.textContent = '🎵';
       }
     }
@@ -1948,6 +1956,7 @@
         window.LoveScene.openGiftBox(() => {
           // Transition complete: Reveal universe HUD
           headerElem.classList.remove('hidden-initially');
+          if (headerActions) headerActions.classList.remove('hidden-initially');
           bottomTimeline.classList.remove('hidden-initially');
         });
       }
@@ -2003,6 +2012,7 @@
     btnResetBox.addEventListener('click', () => {
       closePlanetDetail();
       headerElem.classList.add('hidden-initially');
+      if (headerActions) headerActions.classList.add('hidden-initially');
       bottomTimeline.classList.add('hidden-initially');
       introOverlay.classList.remove('hidden');
       if (window.LoveScene) {
@@ -2272,7 +2282,7 @@
         }
         btnToggleTheme.innerHTML = isPastel
           ? '<span class="btn-icon">🌸</span><span class="btn-text">Hồng Pastel</span>'
-          : '<span class="btn-icon">🌹</span><span class="btn-text">Hoa Hồng Xanh</span>';
+          : '<span class="btn-icon">🌹</span><span class="btn-text">Hoa Hồng</span>';
       });
     }
 

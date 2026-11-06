@@ -24,27 +24,33 @@
   <!-- Cursor Sparkle Trail -->
   <div id="cursor-trail" aria-hidden="true"></div>
 
-  <!-- Ambient Sound / BGM Controller -->
-  <div class="audio-control-bar">
-    <button id="btn-toggle-sound" class="control-btn" title="Bật/Tắt bài hát tình yêu (tlinh - tình yêu có nghĩa là gì?)">
-      <span class="icon" id="sound-icon">🎵</span>
-      <span class="btn-text">Bật Nhạc</span>
-    </button>
-    <label class="custom-music-label" title="Chọn bài hát MP3 yêu thích khác của bạn">
-      <span class="icon">📂</span>
-      <span class="btn-text">Đổi bài khác</span>
-      <input type="file" id="custom-music-input" accept="audio/*" style="display: none;">
-    </label>
-    <audio id="main-bgm-audio" src="assets/love_song.mp3" loop preload="auto"></audio>
-  </div>
-
-  <!-- TOP HUD (Days Together Counter) -->
+  <!-- TOP HUD (Couple Names, Mini Music Player & Days Together Counter) -->
   <header id="main-header" class="hidden-initially">
-    <div class="couple-badge">
-      <span class="heart-pulse">💖</span>
-      <span id="couple-names-display">Hải & Lan</span>
-      <span class="heart-pulse">💖</span>
+    <div class="header-top-row">
+      <div class="couple-badge">
+        <span class="heart-pulse">💖</span>
+        <span id="couple-names-display">Hải & Lan</span>
+        <span class="heart-pulse">💖</span>
+      </div>
+
+      <!-- MINI MUSIC PLAYER (Embedded in Header Row) -->
+      <div class="audio-control-bar" id="audio-control-bar">
+        <button id="btn-toggle-sound" class="control-btn mini-music-pill" title="Bật/Tắt bài hát tình yêu (tlinh - tình yêu có nghĩa là gì?)">
+          <span class="icon spin-disc" id="sound-icon">🎵</span>
+          <span class="music-marquee-wrap">
+            <span class="btn-text">Bật Nhạc</span>
+          </span>
+        </button>
+        <label class="custom-music-label mini-skip-btn" title="Đổi bài hát MP3 khác">
+          <span class="icon">⏭️</span>
+          <span class="btn-text desktop-only">Đổi bài</span>
+          <input type="file" id="custom-music-input" accept="audio/*" style="display: none;">
+        </label>
+        <audio id="main-bgm-audio" src="assets/love_song.mp3" loop preload="auto"></audio>
+      </div>
     </div>
+
+    <!-- 365 DAYS TOGETHER COUNTER -->
     <div class="anniversary-counter" id="anniversary-counter">
       <div class="counter-item">
         <span class="counter-value" id="count-days">365</span>
@@ -66,37 +72,39 @@
         <span class="counter-label">Giây</span>
       </div>
     </div>
-    <div class="header-actions">
-      <button id="btn-toggle-theme" class="pill-btn btn-rose" title="Chuyển đổi giao diện Hoa Hồng Xanh / Hồng Pastel">
-        <span class="btn-icon">🌹</span>
-        <span class="btn-text">Hoa Hồng Xanh</span>
-      </button>
-      <button id="btn-meteor-shower" class="pill-btn btn-meteor" title="Ngắm mưa sao băng lung linh trên bầu trời đêm">
-        <span class="btn-icon">🌠</span>
-        <span class="btn-text">Mưa Sao Băng</span>
-      </button>
-      <button id="btn-bucket-list" class="pill-btn btn-wish" title="Danh sách điều ước & mục tiêu đôi mình">
-        <span class="btn-icon">📜</span>
-        <span class="btn-text">Điều Ước</span>
-      </button>
-      <button id="btn-time-capsule" class="pill-btn btn-capsule" title="Bức thư gửi tương lai - Hộp thư hẹn giờ">
-        <span class="btn-icon">💌</span>
-        <span class="btn-text">Thư Tương Lai</span>
-      </button>
-      <button id="btn-export-card" class="pill-btn btn-card" title="Xuất thiệp ảnh kỷ niệm đẹp để tải về máy">
-        <span class="btn-icon">📸</span>
-        <span class="btn-text">Xuất Thiệp</span>
-      </button>
-      <button id="btn-edit-memories" class="pill-btn btn-edit" title="Tùy chỉnh thông tin & ảnh kỷ niệm">
-        <span class="btn-icon">✏️</span>
-        <span class="btn-text">Tùy Chỉnh</span>
-      </button>
-      <button id="btn-reset-box" class="pill-btn btn-gift" title="Quay lại hộp quà ban đầu">
-        <span class="btn-icon">🎁</span>
-        <span class="btn-text">Hộp Quà</span>
-      </button>
-    </div>
   </header>
+
+  <!-- QUICK ACTION DOCK (7 Buttons - Becomes iOS Bottom Dock on Mobile) -->
+  <nav class="header-actions bottom-dock hidden-initially" id="header-actions" aria-label="Action dock">
+    <button id="btn-toggle-theme" class="pill-btn btn-rose" title="Chuyển đổi giao diện Hoa Hồng Xanh / Hồng Pastel">
+      <span class="btn-icon">🌹</span>
+      <span class="btn-text">Hoa Hồng</span>
+    </button>
+    <button id="btn-meteor-shower" class="pill-btn btn-meteor" title="Ngắm mưa sao băng lung linh trên bầu trời đêm">
+      <span class="btn-icon">🌠</span>
+      <span class="btn-text">Mưa Sao</span>
+    </button>
+    <button id="btn-bucket-list" class="pill-btn btn-wish" title="Danh sách điều ước & mục tiêu đôi mình">
+      <span class="btn-icon">📜</span>
+      <span class="btn-text">Điều Ước</span>
+    </button>
+    <button id="btn-time-capsule" class="pill-btn btn-capsule" title="Bức thư gửi tương lai - Hộp thư hẹn giờ">
+      <span class="btn-icon">💌</span>
+      <span class="btn-text">Thư T.Lai</span>
+    </button>
+    <button id="btn-export-card" class="pill-btn btn-card" title="Xuất thiệp ảnh kỷ niệm đẹp để tải về máy">
+      <span class="btn-icon">📸</span>
+      <span class="btn-text">Xuất Thiệp</span>
+    </button>
+    <button id="btn-edit-memories" class="pill-btn btn-edit" title="Tùy chỉnh thông tin & ảnh kỷ niệm">
+      <span class="btn-icon">✏️</span>
+      <span class="btn-text">Tùy Chỉnh</span>
+    </button>
+    <button id="btn-reset-box" class="pill-btn btn-gift" title="Quay lại hộp quà ban đầu">
+      <span class="btn-icon">🎁</span>
+      <span class="btn-text">Hộp Quà</span>
+    </button>
+  </nav>
 
   <!-- REALISTIC CINEMATIC METEOR CANVAS -->
   <canvas id="meteor-canvas" class="meteor-canvas" aria-hidden="true"></canvas>
