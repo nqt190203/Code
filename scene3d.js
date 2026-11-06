@@ -112,7 +112,6 @@ class LoveUniverseScene {
     // 2. Camera setup
     const aspect = window.innerWidth / window.innerHeight;
     this.camera = new THREE.PerspectiveCamera(46, aspect, 0.1, 1000);
-    this.camera.position.set(0, 2.7, 6.8);
 
     // 3. Renderer setup with high-contrast tone mapping & soft shadows
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -133,7 +132,7 @@ class LoveUniverseScene {
       this.controls.minDistance = 3.2;
       this.controls.autoRotate = true;
       this.controls.autoRotateSpeed = 1.0;
-      this.controls.target.set(0, 0.45, 0);
+      this.controls.target.set(0, 0.35, 0);
     }
 
     // 5. Lighting: Warm vs Cool Fire & Ice Contrast
@@ -141,6 +140,9 @@ class LoveUniverseScene {
 
     // 6. Build 3D Explosion Gift Box
     this.buildGiftBox(theme);
+
+    // 6.1 Initialize responsive camera & box position for current aspect ratio
+    this.updateCameraForAspect(aspect);
 
     // 7. Build Universe & Galaxy
     this.buildUniverse(theme);
@@ -193,6 +195,49 @@ class LoveUniverseScene {
   }
 
   /* =========================================================================
+     CIRCULAR GLOW SPRITE TEXTURE FOR SOFT DUST & CONFETTI
+     ========================================================================= */
+  createGlowParticleTexture() {
+    if (this._glowParticleTex) return this._glowParticleTex;
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    grad.addColorStop(0.25, 'rgba(255, 255, 255, 0.85)');
+    grad.addColorStop(0.6, 'rgba(114, 239, 221, 0.45)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+    this._glowParticleTex = new THREE.CanvasTexture(canvas);
+    return this._glowParticleTex;
+  }
+
+  /* =========================================================================
+     DYNAMIC CAMERA DISTANCE & OFFSET Y FOR MOBILE VERTICAL VIEWPORT
+     ========================================================================= */
+  updateCameraForAspect(aspect) {
+    if (this.state === 'GIFT_BOX') {
+      if (aspect < 1) {
+        // Mobile portrait: dynamically calculate Z distance & lift gift box up to upper screen
+        const zDist = Math.max(7.2, Math.min(10.5, 6.2 / aspect));
+        this.camera.position.set(0, 2.0, zDist);
+        this.giftBoxGroup.position.set(0, 1.05, 0);
+      } else {
+        // Desktop / Landscape
+        this.camera.position.set(0, 1.4, 6.4);
+        this.giftBoxGroup.position.set(0, 0.35, 0);
+      }
+      const targetY = this.giftBoxGroup.position.y;
+      this.camera.lookAt(0, targetY, 0);
+      if (this.controls) {
+        this.controls.target.set(0, targetY, 0);
+      }
+    }
+  }
+
+  /* =========================================================================
      BUILD 3D EXPLOSION GIFT BOX (SYMMETRICAL 4 WALLS + TRUE FLAT RIBBON BOW)
      ========================================================================= */
   buildGiftBox(theme) {
@@ -207,25 +252,25 @@ class LoveUniverseScene {
     // 1. MATERIALS (Blue Rose Sapphire & Pure White Silk)
     this.materials.box = new THREE.MeshStandardMaterial({
       color: theme.boxColor,
-      roughness: 0.35,
-      metalness: 0.15,
+      roughness: 0.28,
+      metalness: 0.18,
       emissive: theme.boxEmissive,
-      emissiveIntensity: 0.25,
+      emissiveIntensity: 0.28,
     });
 
     this.materials.inner = new THREE.MeshStandardMaterial({
       color: theme.innerColor,
-      roughness: 0.45,
-      metalness: 0.05,
+      roughness: 0.38,
+      metalness: 0.08,
     });
 
     // Pure White Silk Ribbon (Crisp white with luminous sheen)
     this.materials.ribbon = new THREE.MeshStandardMaterial({
       color: theme.ribbonColor,
-      roughness: 0.28,
-      metalness: 0.12,
+      roughness: 0.22,
+      metalness: 0.15,
       emissive: theme.ribbonEmissive,
-      emissiveIntensity: 0.25,
+      emissiveIntensity: 0.32,
     });
 
     // 2. CIRCULAR FROSTED PEDESTAL UNDERNEATH
@@ -364,20 +409,27 @@ class LoveUniverseScene {
     this.materials.heart = new THREE.MeshPhysicalMaterial({
       color: theme.heartColor,
       emissive: theme.heartEmissive,
-      emissiveIntensity: 0.6,
-      metalness: 0.1,
-      roughness: 0.12,
-      transmission: 0.8,
-      thickness: 1.2,
+      emissiveIntensity: 0.95,
+      metalness: 0.15,
+      roughness: 0.1,
+      transmission: 0.9,
+      ior: 1.5,
+      thickness: 1.6,
       clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
+      clearcoatRoughness: 0.08,
     });
 
     const heartMesh = new THREE.Mesh(heartGeo, this.materials.heart);
-    heartMesh.scale.set(0.65, 0.65, 0.65);
+    heartMesh.scale.set(0.92, 0.92, 0.92);
     heartMesh.rotation.z = 0; // Upright: lobes on top, tip pointing down
     heartMesh.castShadow = true;
     this.innerHeartGroup.add(heartMesh);
+
+    // Dedicated PointLight at the center of the heart illuminating surrounding flaps
+    this.heartPointLight = new THREE.PointLight(theme.coolRimColor || 0x72efdd, 3.6, 16);
+    this.heartPointLight.position.set(0, 0, 0);
+    this.innerHeartGroup.add(this.heartPointLight);
+
     this.innerHeartGroup.position.set(0, 0.1, 0);
     this.innerHeartGroup.scale.set(0.01, 0.01, 0.01);
     this.giftBoxGroup.add(this.innerHeartGroup);
@@ -453,11 +505,13 @@ class LoveUniverseScene {
     sparkleGeo.setAttribute('color', new THREE.BufferAttribute(sparkleColors, 3));
 
     const sparkleMat = new THREE.PointsMaterial({
-      size: 0.16,
+      size: 0.24,
       vertexColors: true,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.85,
+      map: this.createGlowParticleTexture(),
       blending: THREE.AdditiveBlending,
+      depthWrite: false,
     });
 
     this.boxSparkles = new THREE.Points(sparkleGeo, sparkleMat);
@@ -1572,75 +1626,217 @@ class LoveUniverseScene {
     }
 
     const startTime = performance.now();
-    const totalDuration = 3400; // ms
+    const totalDuration = 2800; // ms
 
-    // Confetti stardust blast (Blue Rose & Gold Flame Colors)
-    if (typeof confetti === 'function') {
-      confetti({
-        particleCount: 150,
-        spread: 100,
-        origin: { y: 0.55 },
-        colors: ['#00b4d8', '#ffaa00', '#ffffff', '#ffd166', '#72efdd', '#ff7700'],
-      });
+    // Hide drag hint pill immediately
+    const hintPill = document.getElementById('drag-hint-pill');
+    if (hintPill) {
+      hintPill.style.transition = 'opacity 0.3s ease';
+      hintPill.style.opacity = '0';
+      setTimeout(() => { if (hintPill) hintPill.style.display = 'none'; }, 300);
     }
 
+    // Camera initial positions
     const camStartPos = this.camera.position.clone();
+    const zoomInPos = camStartPos.clone().multiplyScalar(0.86);
     const camTargetPos = new THREE.Vector3(0, 9, 28);
-    const lookAtStart = new THREE.Vector3(0, 0.35, 0);
+    const lookAtStart = new THREE.Vector3(0, this.giftBoxGroup.position.y, 0);
     const lookAtTarget = new THREE.Vector3(3, 1, 0);
+    const startBoxRotY = this.giftBoxGroup.rotation.y;
+
+    // 3D Explosion Particle Burst System
+    let explosionParticles = null;
+    let burstTriggered = false;
+
+    const createExplosionBurst = () => {
+      const pCount = 180;
+      const geo = new THREE.BufferGeometry();
+      const positions = new Float32Array(pCount * 3);
+      const velocities = [];
+      const colors = new Float32Array(pCount * 3);
+
+      for (let i = 0; i < pCount; i++) {
+        // Emit from center of gift box
+        positions[i * 3] = 0;
+        positions[i * 3 + 1] = this.giftBoxGroup.position.y + 0.2;
+        positions[i * 3 + 2] = 0;
+
+        // Spherical explosion velocity with high initial thrust
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos((Math.random() * 2) - 1);
+        const speed = 0.16 + Math.random() * 0.26;
+
+        velocities.push({
+          x: Math.sin(phi) * Math.cos(theta) * speed,
+          y: Math.sin(phi) * Math.sin(theta) * speed + 0.06, // Slight upward lift
+          z: Math.cos(phi) * speed
+        });
+
+        // Palette: Starlight Cyan, Radiant Gold, Pure White, Rose
+        const rColor = Math.random();
+        if (rColor < 0.38) {
+          colors[i * 3] = 0.45; colors[i * 3 + 1] = 0.95; colors[i * 3 + 2] = 0.87; // Cyan
+        } else if (rColor < 0.68) {
+          colors[i * 3] = 1.0; colors[i * 3 + 1] = 0.82; colors[i * 3 + 2] = 0.4;  // Gold
+        } else if (rColor < 0.86) {
+          colors[i * 3] = 1.0; colors[i * 3 + 1] = 0.46; colors[i * 3 + 2] = 0.65; // Rose
+        } else {
+          colors[i * 3] = 1.0; colors[i * 3 + 1] = 1.0; colors[i * 3 + 2] = 1.0;   // Diamond White
+        }
+      }
+
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      const mat = new THREE.PointsMaterial({
+        size: 0.32,
+        vertexColors: true,
+        transparent: true,
+        opacity: 1.0,
+        map: this.createGlowParticleTexture(),
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+
+      explosionParticles = {
+        mesh: new THREE.Points(geo, mat),
+        velocities,
+        count: pCount,
+        positions,
+        opacity: 1.0
+      };
+
+      this.scene.add(explosionParticles.mesh);
+
+      // Trigger 2D confetti burst in sync
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 160,
+          spread: 100,
+          origin: { y: 0.5 },
+          colors: ['#72efdd', '#ffd166', '#ff758f', '#ffffff', '#00b4d8']
+        });
+      }
+    };
 
     const animateOpen = (now) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / totalDuration, 1);
 
-      // STAGE 1 (0% -> 50%): UNBOXING IN 4 DIRECTIONS
-      // 1.1 Lid lifts smoothly up
-      const lidP = Math.min(progress / 0.45, 1);
-      const lidEase = 1 - Math.pow(1 - lidP, 3);
-      const halfH = 2.2 / 2;
-      this.boxLidGroup.position.y = (halfH + 0.48 / 2 - 0.02) + lidEase * 4.2;
-      this.boxLidGroup.position.z = -lidEase * 1.6;
-      this.boxLidGroup.rotation.x = lidEase * 0.5;
+      // =========================================================================
+      // GIAI ĐOẠN 1: LẤY ĐÀ (Anticipation: 0ms -> 500ms, progress: 0 -> 0.18)
+      // =========================================================================
+      if (progress < 0.18) {
+        const p1 = progress / 0.18;
+        // Camera zooms in gently
+        this.camera.position.lerpVectors(camStartPos, zoomInPos, p1);
 
-      // 1.2 Four walls fold outward in 4 DISTINCT directions
-      if (progress >= 0.12) {
-        const wallP = Math.min((progress - 0.12) / 0.42, 1);
-        const flapAngle = (Math.PI / 2) * (1 - Math.pow(1 - wallP, 3));
+        // Box wiggles with contained energy & aligns towards front view
+        const wiggleAmp = Math.sin(p1 * Math.PI * 8) * (0.04 * (1 - p1) + 0.015);
+        this.giftBoxGroup.rotation.z = wiggleAmp;
+        this.giftBoxGroup.rotation.x = Math.cos(p1 * Math.PI * 8) * (wiggleAmp * 0.6);
+        this.giftBoxGroup.rotation.y = THREE.MathUtils.lerp(startBoxRotY, 0, p1 * 0.6);
 
-        // Front folds forward (+X)
+        // Build up interior light leaking from heart
+        if (this.heartPointLight) {
+          this.heartPointLight.intensity = p1 * 2.2;
+        }
+      }
+
+      // =========================================================================
+      // GIAI ĐOẠN 2: BUNG MỞ (Action: 500ms -> 1100ms, progress: 0.18 -> 0.40)
+      // =========================================================================
+      if (progress >= 0.18 && !burstTriggered) {
+        burstTriggered = true;
+        this.giftBoxGroup.rotation.z = 0;
+        this.giftBoxGroup.rotation.x = 0;
+        createExplosionBurst();
+      }
+
+      if (progress >= 0.18 && progress < 0.55) {
+        const p2 = Math.min((progress - 0.18) / 0.22, 1);
+
+        // 2.1 Nắp hộp bay vút lên cao kèm xoay nhẹ và mờ dần biến mất hoàn toàn
+        const lidEase = Math.pow(p2, 1.8);
+        const halfH = 2.2 / 2;
+        this.boxLidGroup.position.y = (halfH + 0.48 / 2 - 0.02) + lidEase * 8.5;
+        this.boxLidGroup.position.z = -lidEase * 2.2;
+        this.boxLidGroup.rotation.x = lidEase * 0.9;
+        this.boxLidGroup.rotation.y = lidEase * 0.6;
+
+        if (p2 > 0.35) {
+          const lidAlpha = Math.max(0, 1 - (p2 - 0.35) / 0.65);
+          this.boxLidGroup.traverse((child) => {
+            if (child.isMesh && child.material) {
+              child.material.transparent = true;
+              child.material.opacity = lidAlpha;
+            }
+          });
+          if (lidAlpha <= 0) {
+            this.boxLidGroup.visible = false;
+          }
+        }
+
+        // 2.2 Bốn thành hộp ngả xuống mượt mà có độ nảy nhẹ (Back.out physics)
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        const backOut = 1 + c3 * Math.pow(p2 - 1, 3) + c1 * Math.pow(p2 - 1, 2);
+        const flapAngle = (Math.PI / 2) * backOut;
+
         if (this.boxWalls.front) this.boxWalls.front.rotation.x = flapAngle;
-        // Back folds backward (-X)
         if (this.boxWalls.back) this.boxWalls.back.rotation.x = -flapAngle;
-        // Left folds outward to the left (+Z rotation tilts +Y to -X)
         if (this.boxWalls.left) this.boxWalls.left.rotation.z = flapAngle;
-        // Right folds outward to the right (-Z rotation tilts +Y to +X)
         if (this.boxWalls.right) this.boxWalls.right.rotation.z = -flapAngle;
       }
 
-      // 1.3 Inner Crystal Heart rises & pulses
-      if (progress >= 0.25) {
-        const heartP = Math.min((progress - 0.25) / 0.4, 1);
-        const heartEase = 1 - Math.pow(1 - heartP, 3);
-        const s = heartEase * 1.0;
-        this.innerHeartGroup.scale.set(s, s, s);
-        this.innerHeartGroup.position.y = 0.1 + heartEase * 0.5;
-        this.innerHeartGroup.rotation.y += 0.05;
+      // Update 3D Explosion Particles (Drag & Gravity & Fade)
+      if (explosionParticles) {
+        const pos = explosionParticles.positions;
+        const vels = explosionParticles.velocities;
+        for (let i = 0; i < explosionParticles.count; i++) {
+          pos[i * 3] += vels[i].x;
+          pos[i * 3 + 1] += vels[i].y;
+          pos[i * 3 + 2] += vels[i].z;
 
-        this.boxLight.intensity = heartEase * 22;
+          vels[i].x *= 0.94; // Air drag
+          vels[i].y = (vels[i].y * 0.94) - 0.003; // Drag + slight gravity
+          vels[i].z *= 0.94;
+        }
+        explosionParticles.mesh.geometry.attributes.position.needsUpdate = true;
+        explosionParticles.opacity *= 0.955;
+        explosionParticles.mesh.material.opacity = explosionParticles.opacity;
+
+        if (explosionParticles.opacity < 0.01 && explosionParticles.mesh.parent) {
+          this.scene.remove(explosionParticles.mesh);
+          explosionParticles = null;
+        }
       }
 
-      // STAGE 2 (58%): HIDE GIFT BOX COMPLETELY BEFORE GALAXY REVEAL
+      // =========================================================================
+      // GIAI ĐOẠN 3: THĂNG HOA (Follow-through: 1100ms -> 2800ms)
+      // =========================================================================
+      if (progress >= 0.35) {
+        const p3 = Math.min((progress - 0.35) / 0.28, 1);
+        const heartEase = 1 - Math.pow(1 - p3, 3);
+
+        this.innerHeartGroup.scale.set(heartEase * 1.0, heartEase * 1.0, heartEase * 1.0);
+        this.innerHeartGroup.position.y = 0.2 + heartEase * 1.35;
+        this.innerHeartGroup.rotation.y += 0.04;
+
+        if (this.heartPointLight) {
+          this.heartPointLight.intensity = heartEase * 4.8;
+        }
+      }
+
+      // Transition smoothly into Galaxy / Universe (progress 58% -> 100%)
       if (progress >= 0.58) {
         this.giftBoxGroup.visible = false;
         this.universeGroup.visible = true;
-      }
 
-      // STAGE 3 (58% -> 100%): CAMERA COASTS SMOOTHLY INTO GALAXY
-      if (progress >= 0.58) {
         const camP = (progress - 0.58) / 0.42;
         const camEase = 0.5 - Math.cos(camP * Math.PI) / 2;
 
-        this.camera.position.lerpVectors(camStartPos, camTargetPos, camEase);
+        this.camera.position.lerpVectors(zoomInPos, camTargetPos, camEase);
         const currentLook = new THREE.Vector3().lerpVectors(lookAtStart, lookAtTarget, camEase);
         this.camera.lookAt(currentLook);
         this.currentLookAt.copy(currentLook);
@@ -1711,10 +1907,20 @@ class LoveUniverseScene {
     this.universeGroup.visible = false;
     this.giftBoxGroup.visible = true;
 
+    // Restore gift lid visibility and opacity
+    this.boxLidGroup.visible = true;
+    this.boxLidGroup.traverse((child) => {
+      if (child.isMesh && child.material) {
+        child.material.opacity = 1;
+      }
+    });
+
     if (this.boxWalls.front) this.boxWalls.front.rotation.set(0, 0, 0);
     if (this.boxWalls.back) this.boxWalls.back.rotation.set(0, 0, 0);
     if (this.boxWalls.left) this.boxWalls.left.rotation.set(0, 0, 0);
     if (this.boxWalls.right) this.boxWalls.right.rotation.set(0, 0, 0);
+
+    this.giftBoxGroup.rotation.set(0, 0, 0);
 
     const halfH = 2.2 / 2;
     this.boxLidGroup.position.set(0, halfH + 0.48 / 2 - 0.02, 0);
@@ -1722,16 +1928,15 @@ class LoveUniverseScene {
 
     this.innerHeartGroup.scale.set(0.01, 0.01, 0.01);
     this.innerHeartGroup.position.set(0, 0.1, 0);
-    this.boxLight.intensity = 0;
+    if (this.boxLight) this.boxLight.intensity = 0;
+    if (this.heartPointLight) this.heartPointLight.intensity = 0;
 
-    this.targetCameraPos.set(0, 1.3, 7.6);
-    this.targetLookAt.set(0, 0.35, 0);
-    this.camera.position.copy(this.targetCameraPos);
-    this.camera.lookAt(this.targetLookAt);
+    // Apply aspect ratio responsive camera position
+    const aspect = window.innerWidth / window.innerHeight;
+    this.updateCameraForAspect(aspect);
 
     if (this.controls) {
       this.controls.enabled = true;
-      this.controls.target.copy(this.targetLookAt);
       this.controls.autoRotate = true;
       this.controls.autoRotateSpeed = 1.0;
     }
@@ -1766,6 +1971,7 @@ class LoveUniverseScene {
     // Update Lights & Fog
     if (this.lights.flameRim) this.lights.flameRim.color.setHex(theme.rimLightColor);
     if (this.lights.coolRim) this.lights.coolRim.color.setHex(theme.coolRimColor);
+    if (this.heartPointLight) this.heartPointLight.color.setHex(theme.coolRimColor || 0x72efdd);
     if (this.scene && this.scene.fog) this.scene.fog.color.setHex(theme.fogColor);
     if (this.renderer) this.renderer.setClearColor(theme.fogColor, 0);
   }
@@ -1776,14 +1982,36 @@ class LoveUniverseScene {
   bindEvents() {
     window.addEventListener('resize', () => this.onWindowResize());
 
+    let pointerDownPos = { x: 0, y: 0 };
+    let pointerDownTime = 0;
+
+    window.addEventListener('pointerdown', (e) => {
+      pointerDownPos = { x: e.clientX, y: e.clientY };
+      pointerDownTime = performance.now();
+
+      // Dismiss 3D drag hint pill on user interaction
+      const hintPill = document.getElementById('drag-hint-pill');
+      if (hintPill) {
+        hintPill.style.transition = 'opacity 0.4s ease';
+        hintPill.style.opacity = '0';
+        setTimeout(() => { if (hintPill) hintPill.style.display = 'none'; }, 400);
+      }
+    });
+
     window.addEventListener('pointermove', (e) => {
       this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
       this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
       this.checkRaycastHover(e);
     });
 
-    window.addEventListener('click', (e) => {
-      this.handlePointerClick(e);
+    window.addEventListener('pointerup', (e) => {
+      const dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+      const duration = performance.now() - pointerDownTime;
+
+      // Distinguish 3D rotation from click: only open if delta < 5px and quick tap (< 400ms)
+      if (dist < 5 && duration < 400) {
+        this.handlePointerClick(e);
+      }
     });
   }
 
@@ -1885,9 +2113,14 @@ class LoveUniverseScene {
 
   onWindowResize() {
     if (!this.camera || !this.renderer) return;
-    this.camera.aspect = window.innerWidth / window.innerHeight;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const aspect = width / height;
+
+    this.camera.aspect = aspect;
+    this.updateCameraForAspect(aspect);
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(width, height);
   }
 
   /* =========================================================================
@@ -1911,10 +2144,18 @@ class LoveUniverseScene {
       }
     }
 
-    // Sparkles & Bow shimmer
+    // Floating fireflies stardust around gift box (gently drifting upwards)
     if (this.boxSparkles && this.giftBoxGroup.visible) {
-      this.boxSparkles.rotation.y = time * 0.35;
-      this.boxSparkles.rotation.x = Math.sin(time * 0.25) * 0.15;
+      const posAttr = this.boxSparkles.geometry.attributes.position;
+      const posArr = posAttr.array;
+      for (let i = 0; i < posArr.length / 3; i++) {
+        posArr[i * 3 + 1] += 0.005;
+        if (posArr[i * 3 + 1] > 2.8) {
+          posArr[i * 3 + 1] = -1.8;
+        }
+      }
+      posAttr.needsUpdate = true;
+      this.boxSparkles.rotation.y = time * 0.18;
     }
 
     // Galaxy Planets & Starfield Animation

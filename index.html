@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Kỷ Niệm 1 Năm Yêu Nhau - Vũ Trụ Tình Yêu Của Chúng Ta 💕</title>
   <meta name="description" content="Trang web kỷ niệm 1 năm yêu nhau với hộp quà 3D và vũ trụ tình yêu tương tác lung linh">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -101,13 +101,19 @@
   <!-- REALISTIC CINEMATIC METEOR CANVAS -->
   <canvas id="meteor-canvas" class="meteor-canvas" aria-hidden="true"></canvas>
 
+  <!-- 3D DRAG HINT FLOATING PILL -->
+  <div id="drag-hint-pill" class="drag-hint-pill" aria-hidden="true">
+    <span class="swipe-hand">👆</span>
+    <span class="swipe-text">Xoay 360° để ngắm</span>
+  </div>
+
   <!-- GIFT BOX INTRO OVERLAY -->
   <div id="gift-intro-overlay">
     <div class="intro-content">
       <div class="anniversary-tag">✨ Kỷ Niệm 1 Năm Yêu Nhau ✨</div>
       <h1 class="intro-title">Món Quà Dành Tặng Em</h1>
       <p class="intro-subtitle">
-        Hãy chạm và xoay hộp quà để cảm nhận, sau đó nhấp vào hộp quà để mở ra cả một vũ trụ ký ức của hai chúng ta...
+        Hãy chạm và xoay hộp quà để cảm nhận, sau đó bấm mở quà để bước vào cả một vũ trụ ký ức của hai chúng ta...
       </p>
       <div class="gift-prompt-box">
         <button id="btn-open-gift" class="btn-glow-pulse">
@@ -115,7 +121,6 @@
           <span>Bấm Mở Quà Ngay</span>
           <span class="sparkle-spark">✨</span>
         </button>
-        <p class="hint-drag">💡 Kéo chuột/ngón tay để xoay hộp quà 360°</p>
       </div>
     </div>
   </div>
