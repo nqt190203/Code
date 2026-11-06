@@ -67,32 +67,39 @@
       </div>
     </div>
     <div class="header-actions">
-      <button id="btn-toggle-theme" class="pill-btn theme-btn" title="Chuyển đổi giao diện Hoa Hồng Xanh Lửa Băng / Hồng Trắng">
-        🌹 Hoa Hồng Xanh
+      <button id="btn-toggle-theme" class="pill-btn btn-rose" title="Chuyển đổi giao diện Hoa Hồng Xanh / Hồng Pastel">
+        <span class="btn-icon">🌹</span>
+        <span class="btn-text">Hoa Hồng Xanh</span>
       </button>
-      <button id="btn-meteor-shower" class="pill-btn meteor-btn" title="Kích hoạt mưa sao băng lời chúc & icon cute">
-        🌠 Mưa Sao Băng
+      <button id="btn-meteor-shower" class="pill-btn btn-meteor" title="Ngắm mưa sao băng lung linh trên bầu trời đêm">
+        <span class="btn-icon">🌠</span>
+        <span class="btn-text">Mưa Sao Băng</span>
       </button>
-      <button id="btn-bucket-list" class="pill-btn wish-btn" title="Danh sách điều ước & mục tiêu đôi mình">
-        📜 Điều Ước
+      <button id="btn-bucket-list" class="pill-btn btn-wish" title="Danh sách điều ước & mục tiêu đôi mình">
+        <span class="btn-icon">📜</span>
+        <span class="btn-text">Điều Ước</span>
       </button>
-      <button id="btn-time-capsule" class="pill-btn capsule-btn" title="Bức thư gửi tương lai - Hộp thư hẹn giờ">
-        💌 Thư Tương Lai
+      <button id="btn-time-capsule" class="pill-btn btn-capsule" title="Bức thư gửi tương lai - Hộp thư hẹn giờ">
+        <span class="btn-icon">💌</span>
+        <span class="btn-text">Thư Tương Lai</span>
       </button>
-      <button id="btn-export-card" class="pill-btn card-btn" title="Xuất thiệp ảnh kỷ niệm đẹp để tải về máy">
-        📸 Xuất Thiệp
+      <button id="btn-export-card" class="pill-btn btn-card" title="Xuất thiệp ảnh kỷ niệm đẹp để tải về máy">
+        <span class="btn-icon">📸</span>
+        <span class="btn-text">Xuất Thiệp</span>
       </button>
-      <button id="btn-edit-memories" class="pill-btn" title="Tùy chỉnh thông tin & ảnh kỷ niệm">
-        ✏️ Tùy chỉnh
+      <button id="btn-edit-memories" class="pill-btn btn-edit" title="Tùy chỉnh thông tin & ảnh kỷ niệm">
+        <span class="btn-icon">✏️</span>
+        <span class="btn-text">Tùy Chỉnh</span>
       </button>
-      <button id="btn-reset-box" class="pill-btn outline" title="Quay lại hộp quà ban đầu">
-        🎁 Hộp Quà
+      <button id="btn-reset-box" class="pill-btn btn-gift" title="Quay lại hộp quà ban đầu">
+        <span class="btn-icon">🎁</span>
+        <span class="btn-text">Hộp Quà</span>
       </button>
     </div>
   </header>
 
-  <!-- METEOR SHOWER WISHES & CUTE ICONS LAYER -->
-  <div id="meteor-shower-layer" class="meteor-shower-layer" aria-hidden="true"></div>
+  <!-- REALISTIC CINEMATIC METEOR CANVAS -->
+  <canvas id="meteor-canvas" class="meteor-canvas" aria-hidden="true"></canvas>
 
   <!-- GIFT BOX INTRO OVERLAY -->
   <div id="gift-intro-overlay">

@@ -2010,98 +2010,254 @@
       }
     });
 
-    // 7.1 METEOR SHOWER WITH ROMANTIC WISHES & CUTE ICONS
-    const METEOR_WISHES = [
-      { text: 'Mãi Yêu Em Nhất Trên Đời 💕', icon: '💖' },
-      { text: 'Happy 1st Anniversary! 🌸', icon: '🌸' },
-      { text: '365 Ngày Ngọt Ngào Bên Nhau ✨', icon: '✨' },
-      { text: 'Cảm ơn vì đã đến bên anh 💌', icon: '💌' },
-      { text: 'Nụ cười của em là cả vũ trụ 💫', icon: '💫' },
-      { text: 'Em là món quà quý giá nhất 🧸', icon: '🧸' },
-      { text: 'Yêu em hôm nay và mãi mãi 🎀', icon: '🎀' },
-      { text: 'Cùng nhau đi hết cuộc đời nhé 💍', icon: '💍' },
-      { text: 'Ngôi sao rực rỡ nhất trần đời 🌟', icon: '🌟' },
-      { text: 'Mỗi ngày bên em đều là ngày ngọt ngào 🍓', icon: '🍓' },
-      { text: 'Yêu công chúa nhỏ của anh 🥰', icon: '🥰' },
-      { text: 'Hạnh phúc vì luôn có em 💕', icon: '💕' },
-    ];
+    // 7.1 CINEMATIC 60FPS METEOR SHOWER ENGINE (CANVAS 2D ACCELERATED)
+    class CinematicMeteorShower {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        if (!this.canvas) return;
+        this.ctx = this.canvas.getContext('2d');
+        this.meteors = [];
+        this.sparks = [];
+        this.skyFlash = 0;
+        this.flashX = 0;
+        this.flashY = 0;
+        this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+        
+        this.palette = [
+          { name: 'cyan', core: '#ffffff', glow: '#72efdd', tail: 'rgba(78, 242, 210, ' },
+          { name: 'violet', core: '#ffffff', glow: '#b388ff', tail: 'rgba(179, 136, 255, ' },
+          { name: 'gold', core: '#ffffff', glow: '#ffd166', tail: 'rgba(255, 209, 102, ' },
+          { name: 'rose', core: '#ffffff', glow: '#ff758f', tail: 'rgba(255, 117, 143, ' },
+          { name: 'diamond', core: '#ffffff', glow: '#e0f7fa', tail: 'rgba(224, 247, 250, ' }
+        ];
 
-    const meteorLayer = document.getElementById('meteor-shower-layer');
-    const btnMeteorShower = document.getElementById('btn-meteor-shower');
+        this.resize();
+        window.addEventListener('resize', () => this.resize(), { passive: true });
 
-    function spawnMeteor(wishObj = null) {
-      if (!meteorLayer) return;
-      const item = wishObj || METEOR_WISHES[Math.floor(Math.random() * METEOR_WISHES.length)];
+        this.lastTime = performance.now();
+        this.animate = this.animate.bind(this);
+        requestAnimationFrame(this.animate);
+      }
 
-      const meteorEl = document.createElement('div');
-      meteorEl.className = 'meteor-item';
-      
-      // Random starting top position from 5% to 55%
-      const topOffset = 5 + Math.random() * 50;
-      meteorEl.style.top = `${topOffset}vh`;
+      resize() {
+        if (!this.canvas) return;
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.canvas.width = this.width * this.dpr;
+        this.canvas.height = this.height * this.dpr;
+        this.canvas.style.width = `${this.width}px`;
+        this.canvas.style.height = `${this.height}px`;
+        this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+      }
 
-      // Gentle romantic speed between 15s and 20s (plenty of time to read & click)
-      const duration = 15 + Math.random() * 5;
-      meteorEl.style.animationDuration = `${duration}s`;
+      spawnMeteor(options = {}) {
+        // Natural diagonal trajectory (~33° to ~46° downwards from top-right to bottom-left)
+        const angle = -0.58 + (Math.random() - 0.5) * 0.22;
+        const isFireball = options.isFireball || (Math.random() < 0.18);
+        const length = isFireball ? (240 + Math.random() * 140) : (140 + Math.random() * 110);
+        const speed = isFireball ? (28 + Math.random() * 12) : (20 + Math.random() * 12);
+        const thickness = isFireball ? (3.8 + Math.random() * 1.6) : (2.0 + Math.random() * 1.2);
+        const color = options.color || this.palette[Math.floor(Math.random() * this.palette.length)];
 
-      meteorEl.innerHTML = `
-        <div class="meteor-tail"></div>
-        <div class="meteor-head">${item.icon}</div>
-        <div class="meteor-text-bubble">
-          <span>${item.text}</span>
-        </div>
-      `;
+        // Start position: top area or right edge
+        const startFromTop = Math.random() < 0.7;
+        let startX, startY;
+        if (startFromTop) {
+          startX = this.width * 0.25 + Math.random() * (this.width * 0.85);
+          startY = -40;
+        } else {
+          startX = this.width + 40;
+          startY = Math.random() * (this.height * 0.55);
+        }
 
-      // Click to pop meteor with sweet hearts!
-      meteorEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (typeof confetti === 'function') {
-          confetti({
-            particleCount: 35,
-            spread: 50,
-            origin: { x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight },
-            colors: ['#ff3377', '#ff85a2', '#ffffff', '#ffd1dc'],
+        const meteor = {
+          x: startX,
+          y: startY,
+          length,
+          speed,
+          angle,
+          thickness,
+          color,
+          opacity: 0,
+          targetOpacity: 0.85 + Math.random() * 0.15,
+          life: 0,
+          maxLife: 45 + Math.random() * 40,
+          isFireball,
+          sparkTimer: 0
+        };
+
+        if (isFireball) {
+          this.skyFlash = Math.min(this.skyFlash + 0.14, 0.25);
+          this.flashX = startX;
+          this.flashY = startY + 80;
+        }
+
+        this.meteors.push(meteor);
+      }
+
+      triggerStorm(count = 22) {
+        // Ethereal wind chime harp arpeggio
+        bgm.initContext();
+        if (bgm.ctx) {
+          const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+          notes.forEach((freq, idx) => {
+            bgm.playTone(freq, bgm.ctx.currentTime + idx * 0.12, 1.4, 0.06);
           });
         }
-        bgm.initContext();
-        bgm.playTone(880, bgm.ctx.currentTime, 1.2, 0.12);
-        meteorEl.style.transition = 'all 0.3s ease';
-        meteorEl.style.transform = 'scale(1.4)';
-        meteorEl.style.opacity = '0';
-        setTimeout(() => meteorEl.remove(), 300);
-      });
 
-      meteorLayer.appendChild(meteorEl);
-
-      // Clean up after animation finishes
-      setTimeout(() => {
-        if (meteorEl.parentNode) meteorEl.remove();
-      }, duration * 1000 + 500);
-    }
-
-    function triggerMeteorShower(count = 7) {
-      // Play high chime sound
-      bgm.initContext();
-      if (bgm.ctx) {
-        bgm.playTone(659.25, bgm.ctx.currentTime, 1.5, 0.08); // E5
-        bgm.playTone(880.00, bgm.ctx.currentTime + 0.15, 1.5, 0.08); // A5
-        bgm.playTone(1046.50, bgm.ctx.currentTime + 0.3, 1.8, 0.1); // C6
+        for (let i = 0; i < count; i++) {
+          setTimeout(() => {
+            const isFireball = (i % 5 === 0);
+            this.spawnMeteor({ isFireball });
+            if (window.LoveScene && typeof window.LoveScene.trigger3DMeteor === 'function') {
+              window.LoveScene.trigger3DMeteor();
+            }
+          }, i * 110 + Math.random() * 60);
+        }
       }
 
-      // Stagger spawn meteors
-      for (let i = 0; i < count; i++) {
-        setTimeout(() => {
-          spawnMeteor();
-          if (window.LoveScene && typeof window.LoveScene.trigger3DMeteor === 'function') {
-            window.LoveScene.trigger3DMeteor();
+      animate(now) {
+        requestAnimationFrame(this.animate);
+        const dt = Math.min((now - this.lastTime) / 16.67, 2.5);
+        this.lastTime = now;
+
+        this.ctx.clearRect(0, 0, this.width, this.height);
+
+        // 1. Atmospheric Flash on Fireball
+        if (this.skyFlash > 0.005) {
+          const grad = this.ctx.createRadialGradient(
+            this.flashX || this.width * 0.7, this.flashY || this.height * 0.3, 20,
+            this.flashX || this.width * 0.7, this.flashY || this.height * 0.3, this.width * 0.9
+          );
+          grad.addColorStop(0, `rgba(114, 239, 221, ${this.skyFlash * 0.35})`);
+          grad.addColorStop(0.5, `rgba(179, 136, 255, ${this.skyFlash * 0.15})`);
+          grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          this.ctx.fillStyle = grad;
+          this.ctx.fillRect(0, 0, this.width, this.height);
+          this.skyFlash *= 0.88;
+        }
+
+        // 2. Update & Render Meteors
+        for (let i = this.meteors.length - 1; i >= 0; i--) {
+          const m = this.meteors[i];
+          m.life += dt;
+
+          // Fade in then out smoothly
+          if (m.life < 8) {
+            m.opacity = (m.life / 8) * m.targetOpacity;
+          } else if (m.life > m.maxLife - 10) {
+            m.opacity = Math.max(0, ((m.maxLife - m.life) / 10) * m.targetOpacity);
+          } else {
+            m.opacity = m.targetOpacity;
           }
-        }, i * 350);
+
+          // Advance position along angle
+          const vx = Math.cos(m.angle) * m.speed * dt;
+          const vy = -Math.sin(m.angle) * m.speed * dt;
+          m.x += vx;
+          m.y += vy;
+
+          // Spawn stardust sparks
+          m.sparkTimer += dt;
+          if (m.sparkTimer >= 1.2) {
+            m.sparkTimer = 0;
+            const sparkCount = m.isFireball ? 3 : 1;
+            for (let s = 0; s < sparkCount; s++) {
+              this.sparks.push({
+                x: m.x + (Math.random() - 0.5) * m.thickness * 2,
+                y: m.y + (Math.random() - 0.5) * m.thickness * 2,
+                vx: -vx * 0.15 + (Math.random() - 0.5) * 2,
+                vy: -vy * 0.15 + (Math.random() - 0.5) * 2,
+                alpha: 0.9,
+                size: 1.2 + Math.random() * (m.isFireball ? 2.2 : 1.2),
+                color: m.color
+              });
+            }
+          }
+
+          // Compute tail vector
+          const tailX = m.x - Math.cos(m.angle) * m.length;
+          const tailY = m.y + Math.sin(m.angle) * m.length;
+
+          // Tail Gradient
+          const tailGrad = this.ctx.createLinearGradient(m.x, m.y, tailX, tailY);
+          tailGrad.addColorStop(0, `rgba(255, 255, 255, ${m.opacity})`);
+          tailGrad.addColorStop(0.18, `${m.color.tail}${m.opacity * 0.95})`);
+          tailGrad.addColorStop(0.65, `${m.color.tail}${m.opacity * 0.35})`);
+          tailGrad.addColorStop(1, `${m.color.tail}0)`);
+
+          this.ctx.save();
+          // Glow blur pass
+          this.ctx.beginPath();
+          this.ctx.moveTo(m.x, m.y);
+          this.ctx.lineTo(tailX, tailY);
+          this.ctx.strokeStyle = `${m.color.tail}${m.opacity * 0.35})`;
+          this.ctx.lineWidth = m.thickness * 2.8;
+          this.ctx.lineCap = 'round';
+          this.ctx.stroke();
+
+          // Intense core streak pass
+          this.ctx.beginPath();
+          this.ctx.moveTo(m.x, m.y);
+          this.ctx.lineTo(tailX, tailY);
+          this.ctx.strokeStyle = tailGrad;
+          this.ctx.lineWidth = m.thickness;
+          this.ctx.lineCap = 'round';
+          this.ctx.stroke();
+
+          // Meteor Head Core + Halo
+          const headRadius = m.thickness * 1.5;
+          const haloGrad = this.ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, headRadius * 3.8);
+          haloGrad.addColorStop(0, `rgba(255, 255, 255, ${m.opacity})`);
+          haloGrad.addColorStop(0.35, `${m.color.tail}${m.opacity * 0.85})`);
+          haloGrad.addColorStop(1, `${m.color.tail}0)`);
+          this.ctx.fillStyle = haloGrad;
+          this.ctx.beginPath();
+          this.ctx.arc(m.x, m.y, headRadius * 3.8, 0, Math.PI * 2);
+          this.ctx.fill();
+
+          // Sharp brilliant point
+          this.ctx.fillStyle = `rgba(255, 255, 255, ${m.opacity})`;
+          this.ctx.beginPath();
+          this.ctx.arc(m.x, m.y, headRadius * 0.8, 0, Math.PI * 2);
+          this.ctx.fill();
+          this.ctx.restore();
+
+          // Remove completed or off-screen meteors
+          if (m.life >= m.maxLife || m.y > this.height + 100 || m.x < -100) {
+            this.meteors.splice(i, 1);
+          }
+        }
+
+        // 3. Update & Render Stardust Sparks
+        for (let i = this.sparks.length - 1; i >= 0; i--) {
+          const s = this.sparks[i];
+          s.x += s.vx * dt;
+          s.y += s.vy * dt;
+          s.alpha -= 0.028 * dt;
+          s.size = Math.max(0.2, s.size - 0.02 * dt);
+
+          if (s.alpha <= 0) {
+            this.sparks.splice(i, 1);
+            continue;
+          }
+
+          this.ctx.fillStyle = `${s.color.tail}${s.alpha})`;
+          this.ctx.beginPath();
+          this.ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
       }
     }
+
+    const cinematicMeteors = new CinematicMeteorShower('meteor-canvas');
+    const btnMeteorShower = document.getElementById('btn-meteor-shower');
 
     if (btnMeteorShower) {
       btnMeteorShower.addEventListener('click', () => {
-        triggerMeteorShower(8);
+        if (cinematicMeteors) {
+          cinematicMeteors.triggerStorm(22);
+        }
       });
     }
 
@@ -2114,18 +2270,20 @@
         if (window.LoveScene && typeof window.LoveScene.switchTheme === 'function') {
           window.LoveScene.switchTheme(newTheme);
         }
-        btnToggleTheme.innerHTML = isPastel ? '🌸 Hồng Pastel' : '🌹 Hoa Hồng Xanh';
+        btnToggleTheme.innerHTML = isPastel
+          ? '<span class="btn-icon">🌸</span><span class="btn-text">Hồng Pastel</span>'
+          : '<span class="btn-icon">🌹</span><span class="btn-text">Hoa Hồng Xanh</span>';
       });
     }
 
-    // Ambient Meteor Timer in Universe mode
+    // Ambient Meteor Timer in Universe mode (Periodic natural shooting stars)
     setInterval(() => {
       if (window.LoveScene && window.LoveScene.state === 'UNIVERSE' && !planetModal.classList.contains('open')) {
-        if (Math.random() < 0.65) {
-          spawnMeteor();
+        if (Math.random() < 0.7 && cinematicMeteors) {
+          cinematicMeteors.spawnMeteor({ isFireball: Math.random() < 0.2 });
         }
       }
-    }, 4500);
+    }, 3800);
 
     // 8. Sound Toggle (tlinh - tình yêu có nghĩa là gì?)
     btnToggleSound.addEventListener('click', toggleBGM);
